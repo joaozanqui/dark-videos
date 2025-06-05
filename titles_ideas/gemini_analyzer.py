@@ -1,22 +1,4 @@
-from typing import List, Dict, Any, Optional
-import google.generativeai as genai
-from utils import get_gemini_model
-
-gemini_model = get_gemini_model()
-
-def analyze_with_gemini(prompt_text: str) -> Optional[str]:
-    if not gemini_model:
-        print("Error: Gemini model is not initialized. Check API Key and config.")
-        return "Error: Gemini model not initialized."
-    try:
-        response = gemini_model.generate_content(prompt_text)
-        return response.text
-    except Exception as e:
-        if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
-             print(f"Gemini API call blocked. Feedback: {e.response.prompt_feedback}")
-             return f"Error: Content generation blocked. {e.response.prompt_feedback}"
-        print(f"Error during Gemini API call: {e}")
-        return f"Error processing request with Gemini: {e}"
+from typing import List, Dict, Any
 
 def generate_phase1_prompt(channel_name: str, channel_description: str, videos_data: List[Dict[str, Any]]) -> str:
     prompt = f"YouTube Channel Analysis for Content Strategy: '{channel_name}'\n\n"

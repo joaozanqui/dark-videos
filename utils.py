@@ -1,6 +1,7 @@
 import os
 import google.generativeai as genai
 from config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
+from typing import Optional
 
 def export(file_name: str, data: str, format='txt', path='storage/titles/') -> str:
     try:
@@ -37,3 +38,16 @@ def get_gemini_model(
         print(f"Error initializing Gemini model: {e}")
         return None
 
+def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> Optional[str]:
+    if not gemini_model:
+        print("Error: Gemini model is not initialized. Check API Key and config.")
+        return "Error: Gemini model not initialized."
+    try:
+        response = gemini_model.generate_content(prompt_text)
+        return response.text
+    except Exception as e:
+        if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
+             print(f"Gemini API call blocked. Feedback: {e.response.prompt_feedback}")
+             return f"Error: Content generation blocked. {e.response.prompt_feedback}"
+        print(f"Error during Gemini API call: {e}")
+        return f"Error processing request with Gemini: {e}"
