@@ -2,13 +2,18 @@ import os
 import google.generativeai as genai
 from config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
 from typing import Optional
+import re
+import json
 
-def export(file_name: str, data: str, format='txt', path='storage/titles/') -> str:
+def export(file_name: str, data: str, format='txt', path='storage/') -> str:
     try:
         os.makedirs(path, exist_ok=True)
         export_path = f"{path}{file_name}.{format}"
         with open(export_path, 'w', encoding='utf-8') as f:
-            f.write(data)
+            if format == 'json':
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            else:
+                f.write(data)
         
         return export_path
     except Exception as e:
@@ -18,7 +23,8 @@ def export(file_name: str, data: str, format='txt', path='storage/titles/') -> s
 
 def get_gemini_model(
     generation_config: dict | None = None,
-    safety_settings: list | None = None
+    safety_settings: list | None = [],
+    agent_instructions: str | None = None,
 ) -> genai.GenerativeModel | None:
 
     if not GEMINI_API_KEY:
@@ -31,7 +37,8 @@ def get_gemini_model(
         model = genai.GenerativeModel(
             model_name=MODEL_NAME,
             generation_config=final_generation_config,
-            safety_settings=[]
+            system_instruction=agent_instructions,
+            safety_settings=safety_settings
         )
         return model
     except Exception as e:
@@ -51,3 +58,41 @@ def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> 
              return f"Error: Content generation blocked. {e.response.prompt_feedback}"
         print(f"Error during Gemini API call: {e}")
         return f"Error processing request with Gemini: {e}"
+    
+def refactor_dict(json_file):
+    items = []
+    for item in json_file:
+        if isinstance(item, dict):
+            items.append(item)
+        else:
+            print(f"Skipping invalid item structure: {item}")
+
+    if(len(items) == 1):
+        return items[0]
+    
+    return items
+
+def format_json_response(response):
+    
+    json_match = re.search(r'```json\s*(\[.*?\])\s*```', response, re.DOTALL | re.IGNORECASE)
+    if json_match:
+        json_str = json_match.group(1)
+    else:
+        start_index = response.find('[')
+        end_index = response.rfind(']')
+        if start_index != -1 and end_index != -1 and end_index > start_index:
+                json_str = response[start_index:end_index+1]
+        else:
+                json_str = response 
+                
+    try:
+        json_file = json.loads(json_str)
+        if isinstance(json_file, list): 
+            return refactor_dict(json_file)
+        else:
+            print("  - Warning: LLM response for subject was not a JSON list.")
+
+    except json.JSONDecodeError:
+        print(f"  - Error decoding JSON from subject response. Raw text: '{json_str[:200]}...'") 
+    
+    return []

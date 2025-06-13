@@ -33,7 +33,7 @@ def titles_generation(insights_p1, insights_p2, insights_p3, channel_name, model
         return None
 
     print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
-    title_ideas_path = export('title_ideas', title_ideas)
+    title_ideas_path = export('title_ideas', title_ideas, path='storage/titles/')
     print(f"Title Ideas of Phase 4 saved at {title_ideas_path}")
     
     return title_ideas
@@ -56,7 +56,7 @@ def transcripts_analysis(most_viewed_videos, channel_name, model):
         print("Failed to get insights from Phase 3.")
         return None
     
-    insights_p3_path = export('insights_p3', insights_p3)
+    insights_p3_path = export('insights_p3', insights_p3, path='storage/titles/')
     print(f"Insights of Phase 3 (Transcripts Analysis) saved at {insights_p3_path}")
     
     return insights_p3
@@ -82,7 +82,7 @@ def comments_analysis(most_viewed_videos, model):
         print("Failed to get insights from Phase 2.")
         return None
     
-    insights_p2_path = export('insights_p2', insights_p2)
+    insights_p2_path = export('insights_p2', insights_p2, path='storage/titles/')
     print(f"Insights of Phase 2 (Comments Analysis) saved at {insights_p2_path}")
     
     return insights_p2
@@ -95,7 +95,7 @@ def channel_analysis(channel_name, channel_description, videos_list, model):
         print("Failed to get insights from Phase 1.")
         return None
     
-    insights_p1_path = export('insights_p1', insights_p1)
+    insights_p1_path = export('insights_p1', insights_p1, path='storage/titles/')
     print(f"Insights of Phase 1 (Video Data Analysis) saved at {insights_p1_path}")
     return insights_p1
 
