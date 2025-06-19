@@ -27,9 +27,9 @@ def fill_text(text):
     
     
 def generate():
-    generate_button = (1500, 1025)
+    generate_button = (1500, 960)
     gui.click(generate_button)
-    time.sleep(15)
+    time.sleep(120)
     
 def save_audio_downloaded(file_name: str = 'audio', path: str = 'storage/audios') -> Optional[Path]:
     try:
@@ -71,11 +71,13 @@ def download_audio():
            
 def run(texts):
     select_voice()    
+    audios_paths = []
     for i, text in enumerate(texts):
         fill_text(text)    
         generate()
         download_audio()
-        time.sleep(7)
-        save_audio_downloaded(f"audio{i+1}")
+        time.sleep(15)
+        audios_paths.append(save_audio_downloaded(f"audio{i+1}"))
         time.sleep(1)
     
+    return audios_paths

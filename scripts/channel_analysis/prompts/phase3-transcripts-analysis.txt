@@ -1,0 +1,14 @@
+Detailed YouTube Video Transcript Analysis: '${video_title}'
+I am analyzing this video transcript to understand why it resonated with viewers.
+
+Video Transcript:
+${transcript_text}
+
+Please provide a meticulous analysis focusing on:
+1. Script Structure: Introduction, development of ideas, main points, conclusion, calls to action (CTAs).
+2. Storytelling & Engagement: Hooks, narrative techniques, use of examples, emotional connection, pacing.
+3. Language & Tone: Style of communication (e.g., formal, informal, humorous, didactic), clarity, and rapport with the audience.
+4. Key Elements of Success: What specific aspects of this transcript likely contributed most to the video's popularity and impact?
+5. Actionable Learnings: What lessons can be applied to scripting new videos for similar success?
+
+Provide a concise analysis.

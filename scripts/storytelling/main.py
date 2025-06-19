@@ -1,9 +1,9 @@
 from storytelling.variables import get_variables
 from string import Template
-from utils import get_gemini_model, analyze_with_gemini, export
+from scripts.utils import get_gemini_model, analyze_with_gemini, export
 
 def build_prompt_template(variables, step, agent=False):
-    template_path = f"speech/{'agents' if agent else 'prompts'}/{step}.txt"
+    template_path = f"storytelling/{'agents' if agent else 'prompts'}/{step}.txt"
     with open(template_path, "r", encoding="utf-8") as file:
         prompt_template = file.read()
     template = Template(prompt_template)
@@ -20,7 +20,7 @@ def generate_script(variables, prompts, agent):
         prompt = build_prompt_template(variables, step=step_name)   
         chat = chat_history.send_message(prompt)
         response = chat.text
-        export(step_name, response)
+        export(step_name, response, path='storage/scripts/steps/')
         
     full_script = ''
     
@@ -31,9 +31,10 @@ def generate_script(variables, prompts, agent):
         response = chat.text
         full_script += response
         
-        export(f"{step_name}_{i+1}", response)        
+        step_name = f"script_{i+2}"
+        export(f"{step_name}", response, path='storage/scripts/steps/')        
     
-    export(f"full_script", full_script)        
+    export(f"full_script", full_script, path='storage/scripts/')        
     return full_script
 
 def run_process(variables, prompts, agent_name):
@@ -54,18 +55,18 @@ def run_process(variables, prompts, agent_name):
 
 def run(phase1_insights=None, phase2_insights=None, phase3_insights=None):
     if not phase1_insights:
-        with open('storage/titles/insights_p1.txt', "r", encoding="utf-8") as file:
+        with open('storage/analysis/insights_p1.txt', "r", encoding="utf-8") as file:
             phase1_insights = file.read() 
     if not phase2_insights:
-        with open('storage/titles/insights_p2.txt', "r", encoding="utf-8") as file:
+        with open('storage/analysis/insights_p2.txt', "r", encoding="utf-8") as file:
             phase2_insights = file.read() 
     if not phase3_insights:
-        with open('storage/titles/insights_p3.txt', "r", encoding="utf-8") as file:
+        with open('storage/analysis/insights_p3.txt', "r", encoding="utf-8") as file:
             phase3_insights = file.read()         
     variables = get_variables(phase1_insights, phase2_insights, phase3_insights)
     
     # pegar os titulos / lingua selecionada / tempo do video
-    variables['VIDEO_TITLE'] = "7 Segredos de Oração que os Demônios Temem!"
+    variables['VIDEO_TITLE'] = "7 Passos para Libertar-se de Feridas Emocionais 💔"
     variables['LANGUAGE_AND_REGION'] = 'Portuguese (BR)'
     variables['VIDEO_DURATION'] = '25min'
     export('variables', variables, format='json')
@@ -76,5 +77,4 @@ def run(phase1_insights=None, phase2_insights=None, phase3_insights=None):
     # tirar os exports, só deixar o ultimo e o script_structure
     script = run_process(variables, prompts=['script_structure', 'script'], agent_name='script')
     
-    print(script)
     return

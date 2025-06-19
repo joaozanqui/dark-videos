@@ -1,13 +1,5 @@
-from utils import get_gemini_model, analyze_with_gemini, format_json_response
+from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response
 
-def set_qty_variables(variables):
-    variables['NUMBER_OF_INTRO_TOPICS'] = 1
-    variables['NUMBER_OF_DEV_TOPICS'] = 5
-    variables['NUMBER_OF_CONCLUSION_TOPICS'] = 1
-    variables['NUMBER_OF_SUBTOPICS_MIN'] = 3
-    variables['NUMBER_OF_SUBTOPICS_MAX'] = 5
-    
-    return variables
 
 VARIABLES = f'''
     [{{    
@@ -100,6 +92,15 @@ VARIABLES = f'''
     "CORE_TEXTS_OR_PRINCIPLES_OF_NICHE": "Core texts or principles of the niche.",
     }}]
     '''
+
+def set_qty_variables(variables):
+    variables['NUMBER_OF_INTRO_TOPICS'] = 1
+    variables['NUMBER_OF_DEV_TOPICS'] = 5
+    variables['NUMBER_OF_CONCLUSION_TOPICS'] = 1
+    variables['NUMBER_OF_SUBTOPICS_MIN'] = 3
+    variables['NUMBER_OF_SUBTOPICS_MAX'] = 5
+    
+    return variables
 
 def get_variables(phase1_insights, phase2_insights, phase3_insights):
     prompt = f"Analysis and identification of specific topics based on previous analyses'\n\n"

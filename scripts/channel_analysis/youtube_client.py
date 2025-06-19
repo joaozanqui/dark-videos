@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from googleapiclient.discovery import Resource
 from googleapiclient.errors import HttpError
-from titles_ideas.utils import get_youtube_service
+from scripts.channel_analysis.utils import get_youtube_service
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 import xml.etree.ElementTree as ET
@@ -65,21 +65,11 @@ def get_videos_from_playlist(
     playlist_id: str,
     published_after_date_str: str
 ) -> List[Dict[str, Any]]:
-    """
-    Retorna todos os vídeos de uma playlist (playlist_id) publicados após uma data,
-    incluindo título, data, ID, descrição e quantidade de visualizações.
-
-    youtube: objeto Resource (googleapiclient) já autenticado
-    playlist_id: ID da playlist (string)
-    published_after_date_str: string ISO (ex: "2025-01-01T00:00:00") para filtrar vídeos
-    """
-
     videos_basic_info: List[Dict[str, Any]] = []
     all_video_ids: List[str] = []
     next_page_token: Optional[str] = None
     published_after_dt = datetime.fromisoformat(published_after_date_str)
 
-    # 1) Varre todas as páginas de `playlistItems().list(...)`
     while True:
         try:
             response = youtube.playlistItems().list(
@@ -103,21 +93,17 @@ def get_videos_from_playlist(
             if not video_id or not video_published_at_str:
                 continue
 
-            # Converte publishedAt para datetime
             if video_published_at_str.endswith("Z"):
-                # ex: "2025-02-15T12:00:00Z" → "2025-02-15T12:00:00+00:00"
                 video_published_at_dt = datetime.fromisoformat(video_published_at_str[:-1] + "+00:00")
             else:
                 video_published_at_dt = datetime.fromisoformat(video_published_at_str)
 
-            # Se atende ao filtro de data, guarda as informações básicas e o ID
             if video_published_at_dt >= published_after_dt:
                 videos_basic_info.append({
                     "video_id": video_id,
                     "title": snippet.get("title"),
                     "PublishedAt": video_published_at_str,
                     "description": snippet.get("description")
-                    # ainda sem "viewCount"
                 })
                 all_video_ids.append(video_id)
 
@@ -125,12 +111,9 @@ def get_videos_from_playlist(
         if not next_page_token:
             break
 
-    # 2) Se não encontrou nenhum vídeo após a data, já retorna lista vazia
     if not all_video_ids:
         return []
-
-    # 3) Em lotes de até 50 IDs, faz a chamada a `videos().list(part="statistics")`
-    #    e monta um dict {video_id: viewCount}
+    
     viewcount_map: Dict[str, int] = {}
     for i in range(0, len(all_video_ids), 50):
         batch_ids = all_video_ids[i : i + 50]
@@ -151,12 +134,10 @@ def get_videos_from_playlist(
             stats = vid_item.get("statistics", {})
             viewcount_map[vid_id] = int(stats.get("viewCount", 0))
 
-    # 4) Adiciona "viewCount" a cada dicionário em videos_basic_info
     for vid in videos_basic_info:
         vid_id = vid["video_id"]
         vid["viewCount"] = viewcount_map.get(vid_id, 0)
 
-    # 5) Ordena pela data de publicação (PublishedAt) de forma decrescente
     videos_basic_info.sort(key=lambda v: v["PublishedAt"], reverse=True)
 
     return videos_basic_info

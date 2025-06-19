@@ -5,7 +5,7 @@ load_dotenv()
 
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
-MODEL_NAME = "gemini-1.5-flash-latest"
+MODEL_NAME = "gemini-2.0-flash"
 
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in .env file or environment variables.")

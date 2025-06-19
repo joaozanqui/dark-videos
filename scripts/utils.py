@@ -1,9 +1,10 @@
 import os
 import google.generativeai as genai
-from config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
+from config.config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
 from typing import Optional
 import re
 import json
+from string import Template
 
 def export(file_name: str, data: str, format='txt', path='storage/') -> str:
     try:
@@ -96,3 +97,22 @@ def format_json_response(response):
         print(f"  - Error decoding JSON from subject response. Raw text: '{json_str[:200]}...'") 
     
     return []
+
+def get_prompt(prompt_file, variables):
+    prompt_path = f"{prompt_file}"
+    with open(prompt_path, "r", encoding="utf-8") as file:
+        prompt_template = file.read()
+    template = Template(prompt_template)
+    prompt = template.safe_substitute(variables)
+    
+    return prompt
+
+def get_final_language():
+    with open('config/data.json', "r", encoding="utf-8") as file:
+        data = json.load(file)    
+    language = data['final_language']
+
+    if not language:
+        language = 'english'
+
+    return language

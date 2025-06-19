@@ -1,0 +1,15 @@
+YouTube Comment Analysis for Audience Insights:
+
+I've collected comments from popular videos of a target channel. Please analyze them.
+Collected Comments:
+
+${comments_text}
+
+Based on these comments, please identify:
+1. Recurring themes, questions, or pain points mentioned by the audience.
+2. Positive sentiments: What do people praise or love about the content/channel?
+3. Negative sentiments or constructive criticism: What are the common complaints or areas for improvement?
+4. Unmet needs or desires: Are there suggestions for new content, formats, or topics?
+5. What valuable insights can be extracted to create highly engaging new videos that address the audience's core interests and concerns?
+
+Provide a concise analysis.

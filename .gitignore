@@ -2,3 +2,6 @@ __pycache__
 .env
 storage/
 test.py
+data.json
+output/
+input/image/

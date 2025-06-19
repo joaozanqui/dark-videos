@@ -32,16 +32,12 @@ def goto_page(page):
     time.sleep(5)
 
 def open_browser(browser, system):
+    time.sleep(2)
     gui.press('win') 
-    time.sleep(0.5)
-    
-    if('ubuntu' in system.lower()):
-        ubuntu_search_box = (830, 75)
-        gui.click(ubuntu_search_box)
-    
-    time.sleep(0.5)
+    time.sleep(2)
     
     gui.write(browser)    
+    time.sleep(1)
     gui.press('enter')
     time.sleep(2)
 

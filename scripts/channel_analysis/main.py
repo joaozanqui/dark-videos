@@ -1,42 +1,25 @@
-from titles_ideas.utils import (
-    get_titles_language,
+from scripts.channel_analysis.utils import (
     get_youtube_channel_url
 )
 
-from titles_ideas.youtube_client import (
+from scripts.channel_analysis.youtube_client import (
     get_youtube_channel_data, 
     fetch_top_liked_comments,
     get_transcripts
 )
 
-from titles_ideas.gemini_analyzer import (
+from scripts.channel_analysis.gemini_analyzer import (
     generate_phase1_prompt,
     generate_phase2_prompt,
     generate_phase3_prompt,
     generate_phase3_merge_prompt,
-    generate_phase4_prompt
 )
 
-from utils import (
+from scripts.utils import (
     get_gemini_model,
     analyze_with_gemini,
     export
 )
-
-def titles_generation(insights_p1, insights_p2, insights_p3, channel_name, model):
-    language = get_titles_language()
-    prompt_p4 = generate_phase4_prompt(insights_p1, insights_p2, insights_p3, channel_name, language)   
-    title_ideas = analyze_with_gemini(prompt_p4, model)
-    
-    if not title_ideas:
-        print("Failed to generate title ideas from Phase 4.")
-        return None
-
-    print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
-    title_ideas_path = export('title_ideas', title_ideas, path='storage/titles/')
-    print(f"Title Ideas of Phase 4 saved at {title_ideas_path}")
-    
-    return title_ideas
 
 def transcripts_analysis(most_viewed_videos, channel_name, model):
     most_viewed_videos_qty = 20
@@ -56,7 +39,7 @@ def transcripts_analysis(most_viewed_videos, channel_name, model):
         print("Failed to get insights from Phase 3.")
         return None
     
-    insights_p3_path = export('insights_p3', insights_p3, path='storage/titles/')
+    insights_p3_path = export('insights_p3', insights_p3, path='storage/analysis/')
     print(f"Insights of Phase 3 (Transcripts Analysis) saved at {insights_p3_path}")
     
     return insights_p3
@@ -82,7 +65,7 @@ def comments_analysis(most_viewed_videos, model):
         print("Failed to get insights from Phase 2.")
         return None
     
-    insights_p2_path = export('insights_p2', insights_p2, path='storage/titles/')
+    insights_p2_path = export('insights_p2', insights_p2, path='storage/analysis/')
     print(f"Insights of Phase 2 (Comments Analysis) saved at {insights_p2_path}")
     
     return insights_p2
@@ -95,7 +78,7 @@ def channel_analysis(channel_name, channel_description, videos_list, model):
         print("Failed to get insights from Phase 1.")
         return None
     
-    insights_p1_path = export('insights_p1', insights_p1, path='storage/titles/')
+    insights_p1_path = export('insights_p1', insights_p1, path='storage/analysis/')
     print(f"Insights of Phase 1 (Video Data Analysis) saved at {insights_p1_path}")
     return insights_p1
 
@@ -135,11 +118,4 @@ def run_full_analysis_pipeline():
     print("\n--- Phase 3: Transcript Analysis (using Gemini) ---")
     insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, gemini_model)
 
-    if insights_p1 and insights_p2 and insights_p3:
-        print("\n--- Phase 4: Generating Viral Video Title Ideas (using Gemini) ---")
-        titles_ideas = titles_generation(insights_p1, insights_p2, insights_p3, channel_name, gemini_model)
-    else:
-        print("\nSkipping Phase 4 as not all preceding insights are available.")
-
-    print("\n--- Analysis Pipeline Complete ---")
-    return titles_ideas
+    return [insights_p1, insights_p2, insights_p3]
