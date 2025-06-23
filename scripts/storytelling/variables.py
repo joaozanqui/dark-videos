@@ -1,5 +1,4 @@
-from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response
-
+from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response, get_prompt
 
 VARIABLES = f'''
     [{{    
@@ -88,6 +87,7 @@ VARIABLES = f'''
     "AUDIENCE_DESIRE_1 to AUDIENCE_DESIRE_4": "The audiences main desires.",
     "NUMBER_OF_THEMES_TO_GENERATE": "Number of main themes to be generated.",
     "HIDDEN_ISSUES_EXAMPLES_SINGULAR_FORM": "Singular form of the hidden issue examples.",
+    "AUDIENCE_EXPERIENCES_WITH_THE_THEME": "Bad experiences that the audience has had with the theme and for which they are looking for answers.",
     "DESIRED_OUTCOME_FOR_AUDIENCE": "Desired outcome for the audience (e.g., healing, growth, clarity).",
     "CORE_TEXTS_OR_PRINCIPLES_OF_NICHE": "Core texts or principles of the niche.",
     }}]
@@ -102,25 +102,26 @@ def set_qty_variables(variables):
     
     return variables
 
-def get_variables(phase1_insights, phase2_insights, phase3_insights):
-    prompt = f"Analysis and identification of specific topics based on previous analyses'\n\n"
-    prompt += "Objective: Identify specific topics that will be requested. These topics should be based on previous analyses of a successful channel and its audience.\n\n"
-    prompt += "Summary of Insights from Phase 1 (Channel Video Data Analysis):\n"
-    prompt += f'"""\n{phase1_insights}\n"""\n\n'
-    prompt += "Summary of Insights from Phase 2 (Audience Comment Analysis):\n"
-    prompt += f'"""\n{phase2_insights}\n"""\n\n'
-    prompt += "Summary of Insights from Phase 3 (Successful Videos Transcript Analysis):\n"
-    prompt += f'"""\n{phase3_insights}\n"""\n\n'
+def remove_variables_period(variables):
+    return {
+        key: value[:-1] if isinstance(value, str) and value.endswith('.') else value
+        for key, value in variables.items()
+    }
 
-    prompt += "Topics that should be identified through the previous analysis:\n"
-    prompt += f""" Return a **JSON list of dictionaries**. Each dictionary must contain:
-        ```json
-        {VARIABLES}
-        ```"""
-    prompt += f"\nDo **not include any explanatory text** — only the JSON output\n"
+def get_variables(phase1_insights, phase2_insights, phase3_insights, channel):
+    prompt_variables = {
+        "channel": channel,
+        "phase1_insights": phase1_insights,
+        "phase2_insights": phase2_insights,
+        "phase3_insights": phase3_insights,
+        "variables": VARIABLES
+    }
+
+    prompt = get_prompt('scripts/storytelling/prompts/get_variables.txt', prompt_variables)
     
     response = analyze_with_gemini(prompt)
     
-    variables = format_json_response(response)  
+    variables = format_json_response(response) 
+    variables_without_period = remove_variables_period(variables) 
     
-    return set_qty_variables(variables)
+    return set_qty_variables(variables_without_period)
