@@ -5,6 +5,7 @@ from typing import Optional
 import re
 import json
 from string import Template
+import time
 
 def export(file_name: str, data: str, format='txt', path='storage/') -> str:
     try:
@@ -47,6 +48,7 @@ def get_gemini_model(
         return None
 
 def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> Optional[str]:
+    time.sleep(10)
     if not gemini_model:
         print("Error: Gemini model is not initialized. Check API Key and config.")
         return "Error: Gemini model not initialized."
@@ -116,3 +118,13 @@ def get_final_language():
         language = 'english'
 
     return language
+
+def get_videos_duration():
+    with open('config/data.json', "r", encoding="utf-8") as file:
+        data = json.load(file)    
+    duration = data['duration']
+
+    if not duration:
+        duration = 20
+
+    return duration
