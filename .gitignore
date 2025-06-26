@@ -4,4 +4,5 @@ storage/
 test.py
 data.json
 output/
-input/image/
+todo.txt
+*.m4a
