@@ -6,6 +6,25 @@ import re
 import json
 from string import Template
 import time
+from pathlib import Path
+
+ALLOWED_EXTENSIONS = ['jpg', 'png', 'jpeg']
+
+def get_last_downloaded_file():
+    downloads_path = Path.home() / 'Downloads'
+    
+    if not downloads_path.exists() or not downloads_path.is_dir():
+        downloads_path = Path.home() / 'Transferências'
+        if not downloads_path.exists() or not downloads_path.is_dir():
+            return None
+    
+    files = [f for f in downloads_path.iterdir() if f.is_file() and not str(f).endswith(('.tmp', '.crdownload'))]
+
+    if not files:
+        return None
+
+    last_file = max(files, key=os.path.getctime)
+    return last_file
 
 def export(file_name: str, data: str, format='txt', path='storage/') -> str:
     try:
@@ -58,9 +77,9 @@ def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> 
     except Exception as e:
         if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
              print(f"Gemini API call blocked. Feedback: {e.response.prompt_feedback}")
-             return f"Error: Content generation blocked. {e.response.prompt_feedback}"
+             return None
         print(f"Error during Gemini API call: {e}")
-        return f"Error processing request with Gemini: {e}"
+        return None
     
 def refactor_dict(json_file):
     items = []

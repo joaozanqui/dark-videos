@@ -18,12 +18,12 @@ def goto_top_of_page(x=1):
 def reset_zoom():
     gui.hotkey('ctrl', '+')
     time.sleep(0.5)
-    reset_button = (1720, 130)
+    reset_button = (1650, 110)
     gui.click(reset_button)
     
 def goto_page(page):
     time.sleep(0.5)
-    browser_search_box = (700, 90)
+    browser_search_box = (700, 65)
     gui.click(browser_search_box)
     pyperclip.copy(page)
     time.sleep(1)

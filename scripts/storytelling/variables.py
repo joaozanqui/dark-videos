@@ -120,8 +120,10 @@ def get_variables(phase1_insights, phase2_insights, phase3_insights, channel):
     prompt = get_prompt('scripts/storytelling/prompts/get_variables.txt', prompt_variables)
     
     response = analyze_with_gemini(prompt)
-    
+
     variables = format_json_response(response) 
-    variables_without_period = remove_variables_period(variables) 
+    if variables:
+        variables_without_period = remove_variables_period(variables) 
+        return set_qty_variables(variables_without_period)
     
-    return set_qty_variables(variables_without_period)
+    return {}

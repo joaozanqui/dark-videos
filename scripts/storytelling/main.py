@@ -1,12 +1,10 @@
 from scripts.storytelling.variables import get_variables
-import scripts.images.main as images
 from string import Template
 import os
 from scripts.utils import get_gemini_model, analyze_with_gemini, export, get_final_language, get_videos_duration
 import json
 
 def build_prompt_template(variables, step, agent=False):
-    # print(f"\t\t\t - step: {step}...")
     template_path = f"scripts/storytelling/{'agents' if agent else 'prompts'}/"
     template_file = f"{template_path}{step}.txt"
 
@@ -58,7 +56,7 @@ def create_agent_and_run_prompt(variables, channel_n, title_n, prompts, agent_na
 
     return response
 
-def handle_variables(channel, channel_n):
+def handle_variables(channel, channel_n, language):
     variables_path = "storage/variables/"
     variables_file = f"{variables_path}{channel_n}.json"
 
@@ -66,7 +64,8 @@ def handle_variables(channel, channel_n):
         with open(variables_file, "r", encoding="utf-8") as file:
             variables = json.load(file)     
         return variables
-
+    
+    print(f" - Variables...")
 
     with open('storage/analysis/insights_p1.txt', "r", encoding="utf-8") as file:
         phase1_insights = file.read() 
@@ -75,52 +74,95 @@ def handle_variables(channel, channel_n):
     with open('storage/analysis/insights_p3.txt', "r", encoding="utf-8") as file:
         phase3_insights = file.read()     
 
-    language = get_final_language()
     duration = get_videos_duration()
 
     variables = get_variables(phase1_insights, phase2_insights, phase3_insights, channel)
+    if not variables:
+        return {}
+    
     variables['LANGUAGE_AND_REGION'] = language
     variables['VIDEO_DURATION'] = duration
     
-    export(channel_n, variables, format='json', path=f"")
+    export(channel_n, variables, format='json', path=f"storage/variables/")
     return variables
 
 
 def run():
+    language = get_final_language()
+
     with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
         channels = json.load(file)    
 
     for i, channel in enumerate(channels):
-        print(channel['name'])
+        print(f"- {channel['name']}")
         with open(f"storage/ideas/titles/{i}.json", "r", encoding="utf-8") as file:
             titles = json.load(file)
 
-        print(f" - Variables...")
-        variables = handle_variables(channel, i)
+        variables = handle_variables(channel, i, language)
+        while not variables:
+            print("Variables Failed!")
+            variables = handle_variables(channel, i, language)
+
 
         for j, title in enumerate(titles):
             video_path = f"storage/thought/{i}/{j}/"
-
-            if os.path.exists(f"{video_path}topics.txt") and os.path.exists(f"{video_path}full_script.txt") and os.path.exists(f"{video_path}image_prompt.txt"):
+            
+            has_topics = os.path.exists(f"{video_path}topics.txt")
+            has_full_script = os.path.exists(f"{video_path}full_script.txt")
+            has_image_prompt = os.path.exists(f"{video_path}image_prompt.txt")
+            has_description = os.path.exists(f"{video_path}description.txt")
+            has_all_files = has_topics and  has_full_script and has_image_prompt and has_description
+            
+            if has_all_files:
                 continue
 
-            print(f"\t - {title['title']}")
-    
+            print(f"\t- {title['title']}")
             variables['VIDEO_TITLE'] =  title['title']
             variables['RATIONALE'] =  title['rationale']
 
-            print(f"\t\t - Topics...")
-            topics = create_agent_and_run_prompt(variables, i, j, prompts=['topics'], agent_name='topics')
-            variables['TOPICS'] = topics
+            if not has_topics:
+                print(f"\t\t - Topics...")
+                topics = create_agent_and_run_prompt(variables, i, j, prompts=['topics'], agent_name='topics')
+                variables['TOPICS'] = topics
+            else:
+                with open(f"{video_path}topics.txt", "r", encoding="utf-8") as file:
+                    variables['TOPICS'] = file.read() 
     
-            print(f"\t\t - Full script...")
-            full_script = create_agent_and_run_prompt(variables, i, j, prompts=['script_structure', 'script'], agent_name='script')
-            if full_script:
-                image_prompt = images.run(variables['VIDEO_TITLE'], variables['RATIONALE'], full_script)
-                print(f"\t\t - Image prompt...")
-                export("image_prompt", image_prompt, path=video_path)
+            if not has_full_script:
+                print(f"\t\t - Full script...")
+                full_script = create_agent_and_run_prompt(variables, i, j, prompts=['script_structure', 'script'], agent_name='script')
+            else:
+                with open(f"{video_path}full_script.txt", "r", encoding="utf-8") as file:
+                    full_script = file.read()
 
-                image_path = f"images/{i}/{j}/"
+            if full_script:
+                infos_variables = {
+                    "VIDEO_TITLE": variables['VIDEO_TITLE'],
+                    "RATIONALE": variables['RATIONALE'],
+                    "FULL_SCRIPT": full_script,
+                    "LANGUAGE": variables['LANGUAGE_AND_REGION']
+                }
+
+                if not has_image_prompt:
+                    print(f"\t\t - Image prompt...")
+                    prompt = build_prompt_template(infos_variables, step="image")
+                    image_prompt = analyze_with_gemini(prompt)
+                    export("image_prompt", image_prompt, path=video_path)
+                else:
+                    with open(f"{video_path}image_prompt.txt", "r", encoding="utf-8") as file:
+                        image_prompt = file.read()  
+
+                if not has_description:
+                    print(f"\t\t - Description...")
+                    prompt = build_prompt_template(infos_variables, step="description")
+                    description = analyze_with_gemini(prompt)
+                    export("description", description, path=video_path)
+                else:
+                    with open(f"{video_path}description.txt", "r", encoding="utf-8") as file:
+                        description = file.read()  
+
+                image_path = f"storage/images/{i}/{j}/"
+                image_path = f"storage/audios/{i}/{j}/"
                 os.makedirs(image_path, exist_ok=True)
 
                 print(f"\t\t - Done!")
