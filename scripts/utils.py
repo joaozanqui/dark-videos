@@ -8,7 +8,7 @@ from string import Template
 import time
 from pathlib import Path
 
-ALLOWED_EXTENSIONS = ['jpg', 'png', 'jpeg']
+ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
 
 def get_last_downloaded_file():
     downloads_path = Path.home() / 'Downloads'
@@ -115,7 +115,7 @@ def format_json_response(response):
             print("  - Warning: LLM response for subject was not a JSON list.")
 
     except json.JSONDecodeError:
-        print(f"  - Error decoding JSON from subject response. Raw text: '{json_str[:200]}...'") 
+        print(f"\t\t - Error decoding JSON from subject response. Raw text: '{json_str[:200]}...'") 
     
     return []
 
@@ -147,3 +147,19 @@ def get_videos_duration():
         duration = 20
 
     return duration
+
+def get_language_code(language_input: str) -> str | None:
+    normalized_input = language_input.lower()
+
+    if 'portugu' in normalized_input:
+        return 'pt'
+    elif 'english' in normalized_input or 'ingl' in normalized_input:
+        return 'en'
+    elif 'spanish' in normalized_input or 'espan' in normalized_input:
+        return 'es'
+    elif 'french' in normalized_input or 'franc' in normalized_input:
+        return 'fr'
+    elif 'german' in normalized_input or 'alem' in normalized_input:
+        return 'de'
+    
+    return None

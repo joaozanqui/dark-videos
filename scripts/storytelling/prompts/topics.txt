@@ -1,7 +1,7 @@
 **VIDEO TITLE IN ${LANGUAGE_AND_REGION}:** ${VIDEO_TITLE}
 **VIDEO RATIONALE:** ${RATIONALE}
 
-Create ${NUMBER_OF_INTRO_TOPICS} topic(s) for the introduction (develop only bullet points for what should be covered, and for each intro, cite or use analogies from ${STYLE_REFERENCE_PERSON_1} or ${STYLE_REFERENCE_PERSON_2}, choosing only one per introduction). Create ${NUMBER_OF_DEV_TOPICS} topics for the main body of the script. Create ${NUMBER_OF_CONCLUSION_TOPICS} topic(s) for the conclusion (develop only bullet points for what should be covered, and for each conclusion, cite or use analogies from ${STYLE_REFERENCE_PERSON_1} or ${STYLE_REFERENCE_PERSON_2}, choosing only one per conclusion).
+Create 1 topic for the introduction (develop only bullet points for what should be covered, and for each intro, cite or use analogies from ${STYLE_REFERENCE_PERSON_1} or ${STYLE_REFERENCE_PERSON_2}, choosing only one per introduction). Create ${NUMBER_OF_DEV_TOPICS} topics for the main body of the script. Create 1 topic for the conclusion (develop only bullet points for what should be covered, and for each conclusion, cite or use analogies from ${STYLE_REFERENCE_PERSON_1} or ${STYLE_REFERENCE_PERSON_2}, choosing only one per conclusion).
 
 **OBJECTIVE:** Create topics that reveal hidden truths, ${HIDDEN_ISSUES_EXAMPLES}, always with original narratives, real examples, ${PREFERRED_CONTENT_ELEMENT_1}, and ${PREFERRED_CONTENT_ELEMENT_2}. All of this should be in a ${LANGUAGE_STYLE_ADJECTIVES} language, based on the specific title of each video submitted.
 Each set of topics must be unique, adapting to the ${CORE_AUDIENCE_PAIN_OR_GOAL} behind the title.
@@ -43,7 +43,7 @@ Completely avoid any ${AVOID_TONE_1}, ${AVOID_TONE_2}, or ${AVOID_TONE_3} tone.
 -Subtopic 4: ${TOPIC_STRUCTURE_STEP5_DESCRIPTION}.
 -Subtopic 5: ${TOPIC_STRUCTURE_STEP6_DESCRIPTION}.
 
-**SUBTOPICS (3–5):**
+**SUBTOPICS (${NUMBER_OF_SUBTOPICS_MIN}–${NUMBER_OF_SUBTOPICS_MAX}):**
 (This section contains example structures. Adapt or provide new relevant examples for the niche when using the template).
 Use structures like:
 “Beware of...”
@@ -73,7 +73,45 @@ Create topics with empty phrases like:
 Use ready-made motivational phrases, unfounded ${GUIDANCE_TYPE} advice, or predictable lists.
 Repeat formulas used in previous scripts.
 Offer generic advice without explaining the ${KNOWLEDGE_BASE_MAIN}, neuroscientific, or emotional "why."
+Visual or audio instructions
+Images instructions (eg: **Start with an image of...**; **Show images of...**)
+Music instructions (eg: **Now the music is like...**)
 
-TARGET AUDIENCE:
+**TARGET AUDIENCE:**
 ${TARGET_AUDIENCE_DEMOGRAPHICS_AND_PSYCHOGRAPHICS}, in search of ${AUDIENCE_DESIRES}.
 They don't want magical promises, but rather ${TARGET_AUDIENCE_WANTS}.
+
+**OUTPUT FORMAT**
+
+Your output MUST be a single, raw JSON object. DO NOT include any explanatory text, markdown formatting (like ```json), or any characters whatsoever before or after the JSON structure. Write in {$LANGUAGE_AND_REGION}
+
+**JSON Structure**
+[
+  {
+    "introduction": 
+    [
+        {
+            "title": "write the introduction theme title",
+            "bullet_point_1 to bullet_point_X": "write the bullet points (never write images or audio instructions)"
+        }
+    ]
+  },
+  {
+    "development": 
+    [
+        {
+            "title": "write the Development theme title",
+            "subtopic_1 to subtopic_5": "write the Development theme subtopic 1 to 5 (never write images or audio instructions)",
+        }
+    ]
+  },
+  {
+    "conclusion": 
+    [
+        {
+            "title": "write the Conclusion theme title",
+            "bullet_point_1 to bullet_point_X": "write the bullet points (never write images or audio instructions)"
+        }
+    ]
+  }
+]

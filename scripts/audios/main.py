@@ -57,9 +57,14 @@ def merge_audio(audios_paths, final_path):
         audio_final += audio 
 
     file_name = "audio.mp3"
-    audio_final.export(f"{final_path}/{file_name}", format="mp3")
+    output_path = Path(final_path) / file_name
+    audio_final.export(output_path, format="mp3")
+
     
-    return final_path
+    for path in audios_paths:
+        Path(path).unlink()
+
+    return str(output_path)
 
 def run() -> Optional[Path]:
     # https://www.capcut.com/magic-tools/text-to-speech
@@ -77,14 +82,15 @@ def run() -> Optional[Path]:
     for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
         if channel.is_dir():
             print(f"Channel: '{channels[int(channel.name)]['name']}'")
-            for video in sorted(channel.iterdir(), key=lambda p: int(p.name)):              
+            for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
                 if video.is_dir():
                     try:
-                        final_path = f"storage/audios/{channel.name}/{video.name}"
+                        final_path = f"storage/thought/{channel.name}/{video.name}"
                         os.makedirs(final_path, exist_ok=True)
 
                         audio_files = [
                             f for f in Path(final_path).iterdir()
+                            if f.name == "audio.mp3"
                         ]
 
                         if audio_files:
@@ -96,8 +102,7 @@ def run() -> Optional[Path]:
                         texts_qty = len(texts)
                         audios_paths = []
                         for i, text in enumerate(texts):
-                            # print(f"({i+1}/{texts_qty}) - {channel.name}/{video.name}:\n\n{text}\n\n")
-                            print(f"({i+1}/{texts_qty}) - {channel.name}/{video.name}")
+                            print(f"\t-Video {video.name} - (Audio {i+1}/{texts_qty})")
                             if automatic_download:
                                 audio_file = capcut.run(text)
                             else:

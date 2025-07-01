@@ -40,3 +40,5 @@ Output Requirements:
 Your final output must be only the complete video description text in ${LANGUAGE}, ready to be copied and pasted.
 Do not include any of your own explanatory notes, titles, or any text outside of the description itself.
 The tone should be engaging, informative, and aligned with the mood of the video script.
+
+**REMEMBER:** ONLY WRITE IN ${LANGUAGE}

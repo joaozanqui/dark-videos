@@ -3,26 +3,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import textwrap
 import unicodedata
 from pathlib import Path
-from scripts.utils import get_final_language
+from scripts.utils import get_final_language, get_language_code
 import os
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 import random
-
-def get_whisper_language_code(language_input: str) -> str | None:
-    normalized_input = language_input.lower()
-
-    if 'portugu' in normalized_input:
-        return 'pt'
-    elif 'english' in normalized_input or 'ingl' in normalized_input:
-        return 'en'
-    elif 'spanish' in normalized_input or 'espan' in normalized_input:
-        return 'es'
-    elif 'french' in normalized_input or 'franc' in normalized_input:
-        return 'fr'
-    elif 'german' in normalized_input or 'alem' in normalized_input:
-        return 'de'
-    
-    return None
 
 def subtitles(audio_path, output_path):   
     os.makedirs(output_path, exist_ok=True)
@@ -38,7 +22,7 @@ def subtitles(audio_path, output_path):
     subtitles_dir.mkdir(exist_ok=True)
     subtitles_path = subtitles_dir / f"subtitles.srt"
     model = whisper.load_model("medium")
-    language_code = get_whisper_language_code(language)
+    language_code = get_language_code(language)
 
     try:
         result = model.transcribe(
@@ -63,7 +47,7 @@ def subtitles(audio_path, output_path):
                 subtitles_file.write(f"{start_subtitiles} --> {end_subtitles}\n")
                 subtitles_file.write(f"{text}\n\n")
 
-        print(f"Subtitles generated successfull: {subtitles_path}")
+        print(f"\t\t-Subtitles generated successfull: {subtitles_path}")
         return str(subtitles_path)
     
     except Exception as e:

@@ -82,6 +82,9 @@ Repeat formulas used in previous scripts
 Offer advice without a clear ${KNOWLEDGE_BASE_MAIN} or ${GUIDANCE_TYPE} basis
 Use generic lists like “${GENERIC_LIST_FORMAT_EXAMPLE}”
 Present moralistic phrases without emotional empathy
+Visual or audio instructions
+Images instructions (eg: **Start with an image of...**; **Show images of...**)
+Music instructions (eg: **Now the music is like...**)
 
 **TARGET AUDIENCE:**
 ${TARGET_AUDIENCE_DEMOGRAPHICS_AND_PSYCHOGRAPHICS}. They experience ${AUDIENCE_EXPERIENCES_WITH_THE_THEME}, and they wish ${AUDIENCE_DESIRE_1}, ${AUDIENCE_DESIRE_2}, ${AUDIENCE_DESIRE_3}, and ${AUDIENCE_DESIRE_4}.

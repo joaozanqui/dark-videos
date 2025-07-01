@@ -7,21 +7,28 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-def select_voice():
-    favorites_button = (1200, 510)
-    gui.click(favorites_button)
-    time.sleep(1)
-    
-    voice_1 = (1180, 570) # +200 / +75
-    gui.click(voice_1)
-    time.sleep(1)
+screen_x, screen_y = gui.size()
+
+if screen_x > 1920:
+    BUTTONS = {
+        "text_box": (700, 400),
+        "generate_button": (1450, 1020),
+        "download_button": (1620, 400),
+        "only_audio_button": (1660, 477),
+    }
+else:
+    BUTTONS = {
+        "text_box": (700, 400),
+        "generate_button": (1450, 1020),
+        "download_button": (1620, 430),
+        "only_audio_button": (1625, 510),
+    }
 
 def fill_text(text):
     goto_top_of_page()
-    text_box = (700, 400)
-    gui.click(text_box)
+    gui.click(BUTTONS['text_box'])
     time.sleep(0.5)
-    gui.click(text_box)
+    gui.click(BUTTONS['text_box'])
     time.sleep(0.5)
     gui.hotkey('ctrl', 'a')
     time.sleep(0.5)
@@ -30,13 +37,9 @@ def fill_text(text):
     gui.hotkey('ctrl', 'v')
     time.sleep(1)
     
-    
 def generate():
-    generate_button = (1450, 1020)
-    gui.click(generate_button)
+    gui.click(BUTTONS['generate_button'])
 
-
-    
 def save_audio_downloaded(file_name: str = 'audio', path: str = 'storage/audios') -> Optional[Path]:
     try:
         last_file = get_last_downloaded_file()
@@ -58,14 +61,9 @@ def save_audio_downloaded(file_name: str = 'audio', path: str = 'storage/audios'
         return None
     
 def download_audio():
-    left_click = (1590, 400)
-    gui.doubleClick(left_click)
+    gui.click(BUTTONS['download_button'])
     time.sleep(0.5)
-    download_button = (1620, 400)
-    gui.click(download_button)
-    time.sleep(0.5)
-    only_audio_button = (1660, 477)
-    gui.click(only_audio_button)
+    gui.click(BUTTONS['only_audio_button'])
     time.sleep(0.5)
 
 
@@ -77,20 +75,8 @@ def run(text):
     while last_file_before_download == last_file:
         download_audio()
         time.sleep(10)
+        gui.hotkey('enter')
+        time.sleep(1)
         last_file = get_last_downloaded_file()
 
     return last_file
-
-           
-# def run(texts):
-#     select_voice()    
-#     audios_paths = []
-#     for i, text in enumerate(texts):
-#         fill_text(text)    
-#         generate()
-#         download_audio()
-#         time.sleep(15)
-#         audios_paths.append(save_audio_downloaded(f"audio{i+1}"))
-#         time.sleep(1)
-    
-#     return audios_paths

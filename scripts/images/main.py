@@ -3,41 +3,16 @@ import json
 from typing import Optional
 from scripts.utils import get_last_downloaded_file
 import shutil
-from scripts.utils import ALLOWED_EXTENSIONS
-
-# def rename_images(channel, video):
-#     final_path = Path("storage/images") / channel / video
-
-#     image_files = [
-#         f for f in final_path.iterdir() 
-#         if f.is_file() and f.suffix.lstrip(".").lower() in ALLOWED_EXTENSIONS
-#     ]
-
-#     if not image_files:
-#         print("Erro: Nenhuma imagem (.png, .jpg, .jpeg) encontrada na pasta.")
-#         return False
-    
-#     if len(image_files) > 1:
-#         print(f"Aviso: Múltiplas imagens encontradas. Renomeando a primeira: '{image_files[0].name}'")
-
-#     file_to_rename = image_files[0]
-
-#     ext = file_to_rename.suffix.lstrip(".")
-#     new_name = f"image.{ext}"
-#     new_path = final_path / new_name
-
-#     file_to_rename.rename(new_path)
-
-#     print(f"Sucesso! O arquivo '{file_to_rename.name}' foi renomeado para '{new_name}'.")
-#     return True
-
-
+from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
+import os
+import pyperclip
+import time
 
 def copy_image_to_right_path(final_path: str) -> Optional[Path]:
     try:        
         last_file = get_last_downloaded_file()
         ext = last_file.suffix.lstrip(".")
-        if not ext in ALLOWED_EXTENSIONS:
+        if not ext in ALLOWED_IMAGES_EXTENSIONS:
             ext = 'png'
 
         file_name = f"image.{ext}"
@@ -72,14 +47,17 @@ def run():
     for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
         if channel.is_dir():
             print(f"Channel: '{channels[int(channel.name)]['name']}'")
-            for video in sorted(channel.iterdir(), key=lambda p: int(p.name)):              
+            for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
                 if video.is_dir():
                     try:
-                        final_path = f"storage/images/{channel.name}/{video.name}"
+                        last_file_before_download = get_last_downloaded_file()
+                        last_file = get_last_downloaded_file()
 
+                        final_path = f"storage/thought/{channel.name}/{video.name}"
+                        os.makedirs(final_path, exist_ok=True)
                         image_files = [
                             f for f in Path(final_path).iterdir() 
-                            if f.suffix.lstrip(".").lower() in ALLOWED_EXTENSIONS
+                            if f.suffix.lstrip(".").lower() in ALLOWED_IMAGES_EXTENSIONS
                         ]
 
                         if image_files:
@@ -88,7 +66,12 @@ def run():
                         prompt_file_path = video / "image_prompt.txt"
                         image_prompt = prompt_file_path.read_text(encoding="utf-8").strip()
                         print(f"{channel.name}/{video.name}:\n{image_prompt}")
-                        input("--> Copy the prompt, generate the image and save it at 'Downloads' folder.\n--> Press 'Enter' when the image is in 'Downloads' dir")
+                        pyperclip.copy(image_prompt)
+                        # input("--> Copy the prompt, generate the image and save it at 'Downloads' folder.\n--> Press 'Enter' when the image is in 'Downloads' dir")
+                        while last_file == last_file_before_download:
+                            time.sleep(5)
+                            last_file = get_last_downloaded_file()
+                        
                         copied = copy_image_to_right_path(final_path)
                         
                         if not copied:

@@ -1,17 +1,51 @@
+I WANT A VIDEO OF ${VIDEO_DURATION} MINUTES. CREATE THE PERFECT STRUCTURE WITH THIS VIDEO USING ALL THE INSTRUCTIONS IN YOUR SETTINGS AND ALL THE INFORMATION IN THE VIDEO STRUCTURE (TOPICS), WITHOUT CHANGING OR REWRITING ANYTHING IN THE TOPICS. KEEP THE SAME TITLE FOR ALL THE TOPICS AND KEEP EXACTLY THE SAME STRUCTURE AS THE TOPICS I'M SENDING YOU! DON'T WRITE ANY TOPIC TITLE!
+
 VIDEO TITLE: ${VIDEO_TITLE}
 VIDEO RATIONALE: ${RATIONALE}
+VIDEO STRUCTURE (TOPICS): 
+-Introducion chapter
+-${DEVELOPMENT_QTY} chapters for Development
+-Conclusion chapter
 
-I WANT A VIDEO OF ${VIDEO_DURATION} MINUTES. CREATE THE PERFECT STRUCTURE WITH THIS VIDEO USING ALL THE INSTRUCTIONS IN THE SETTINGS AND ALL THE INSTRUCTIONS OF THE CONFIGURED AGENT, ALL THE INSTRUCTIONS IN YOUR SETTINGS AND ALL THE INFORMATION IN THE TOPICS I'M SENDING YOU, WITHOUT CHANGING OR REWRITING ANYTHING IN THE TOPICS. KEEP THE SAME TITLE FOR ALL THE TOPICS AND KEEP EXACTLY THE SAME STRUCTURE AS THE TOPICS I'M SENDING YOU!
+Write one chapter at a time and **WAIT for my instructions in this chat**. You don't have to say what you're going to do. Just do it! Don't use emojis! 
+Don't write any instruction or titles, only the required text. Note that the full script is ${VIDEO_DURATION} minutes long!
 
-**NEVER WRITE**
-- instructions
-- titles, themes or subtitles
-- transitions
-- pause instructions
-- visual instructions
-- Theme X: something
+**SCRIPT TONE:**
+${LANGUAGE_STYLE_ADJECTIVES}.
+The text delves into the viewer's emotions with delicacy and depth, as if to say: "I see you, I understand your pain."
 
-**WRITE ONLY THE REQUIRED TEXT**
+${TONE_DESCRIPTION_DETAILED}.
+It is not an accusatory or alarmist tone. It is the tone of someone who welcomes and awakens. It guides the viewer to awareness without making them feel guilty.
 
-CONTENT TO BE INCLUDED IN THE STRUCTURE: 
-${TOPICS}.
+Firm, yet compassionate.
+It presents hard truths—but does so with compassion, without judgment.
+
+Referencing ${STYLE_BLEND_COMPONENTS}.
+
+**APPROACH USED:**
+${TITLE_THEME_ADJECTIVES}.
+The use of expressions brings the viewer's body into the experience, connecting reason and emotion.
+
+Completely accessible and poetic, yet simultaneously everyday.
+Short, rhythmic sentences with emotional fluidity, but without being simplistic. It mixes everyday language with almost literary moments, but using simple and easy-to-understand words, as if talking to a friend who has a very simple vocabulary.
+
+Strategic repetition.
+Uses repetition as a hypnotic and reinforcing tool:
+This repetition creates an emotional rhythm and strengthens the connection to the message.
+
+Write the script with well-structured paragraphs, like a continuous emotional narrative. Avoid excessive line breaks. Vary the beginning of the first paragraph according to each theme, emotion, or feeling. Each paragraph should develop a complete, deep, and fluid idea, with smooth transitions between sentences. DO NOT use sentences that are too short. 
+
+**CRITICAL OUTPUT RULES - READ AND OBEY STRICTLY**
+- ABSOLUTELY NO INSTRUCTIONS. Your output must not contain any kind of instructional text.
+- THE NARRATION IS "BLIND". This is the most important rule. The narrator is completely unaware of any visuals, graphics, animations, or music. The narration must stand entirely on its own.
+- NEVER direct the audience's attention to the screen. Do not use phrases like: "Now, look at these images...", "As you can see here...", "This graph shows...", or "Observe this animation...".
+- NEVER reference the video's audio. Do not use phrases like: "Listen to the inspiring music..." or "The sound you hear is...".
+- FOCUS ONLY ON THE CONCEPTS. Narrate the ideas, stories, and information from your context. Explain the subject matter as if you are speaking to someone in a purely audio format.
+- PURE SPOKEN TEXT ONLY. Your final response must exclusively contain the words to be spoken by the narrator. Nothing else.
+- NO METADATA OR INSTRUCTIONS. Your output must not contain any form of non-narration text. This means no titles, no subheadings, no [visual cues], no (parentheticals), no scene descriptions, no transitions, and no notes. The context provided above is for your inspiration only and must not appear in your response.
+- PURE NARRATION TEXT ONLY. Your final response must exclusively contain the words to be spoken by the narrator. Nothing else. Do not add any notes, titles, or explanations.
+- NO TITLES OR HEADINGS IN THE OUTPUT. Do not write the introduction title (e.g., "${INTRODUCTION_TITLE}") or any other subheadings in your response. The title and bullet points provided above are your context and inspiration only; they must not appear in the final text.
+- WRITE IN FULL, FLOWING PARAGRAPHS. Every sentence must end with a period. Structure the text as natural, spoken prose.
+
+**FINAL COMMAND**
+Wait for more instructions to write the script in ${LANGUAGE_AND_REGION} one chapter by one.
