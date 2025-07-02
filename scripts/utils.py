@@ -115,7 +115,7 @@ def format_json_response(response):
             print("  - Warning: LLM response for subject was not a JSON list.")
 
     except json.JSONDecodeError:
-        print(f"\t\t - Error decoding JSON from subject response. Raw text: '{json_str[:200]}...'") 
+        print(f"\t\t\t - Error decoding JSON from subject response.") 
     
     return []
 
