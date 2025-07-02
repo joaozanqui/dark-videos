@@ -13,7 +13,7 @@ def get_topics(step_name, variables, agent):
 
         return topics
     except Exception as e:
-        print(f"Error to get topics: {e}")
+        print(f"\t\t-Error to get topics: Invalid Format")
         return []
 
 
@@ -55,9 +55,19 @@ def handle_variables(channel, channel_n, language):
     duration = get_videos_duration()
 
     variables = get_variables(phase1_insights, phase2_insights, phase3_insights, channel)
-    if not variables:
-        return {}
+
+    def has_invalid_keys():
+        invalid_keys = []
+
+        for key in variables:
+            if "," in key:
+                invalid_keys.append(key)
+
+        return len(invalid_keys) > 0
     
+    if not variables or has_invalid_keys():
+        return handle_variables(channel, channel_n, language)
+
     variables['LANGUAGE_AND_REGION'] = language
     variables['VIDEO_DURATION'] = duration
     
@@ -77,10 +87,6 @@ def run():
             titles = json.load(file)
 
         variables = handle_variables(channel, i, language)
-        while not variables:
-            print("Variables Failed!")
-            variables = handle_variables(channel, i, language)
-
 
         for j, title in enumerate(titles):
             video_path = f"storage/thought/{i}/{j}/"

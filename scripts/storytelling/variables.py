@@ -38,7 +38,7 @@ VARIABLES = f'''
     "STYLE_INGREDIENT_1, STYLE_INGREDIENT_2, STYLE_INGREDIENT_3, STYLE_INGREDIENT_4, STYLE_INGREDIENT_5": "Components that form the channels unique style.",
     "STYLE_REFERENCE_LIST": "A simple, comma-separated list of key authors, thinkers, or figures who serve as the primary style and content inspiration (e.g., Charles Stanley, David Wilkerson, A. W. Tozer; or Seneca, Epictetus, Marcus Aurelius).",
     "STYLE_REFERENCE_LIST_DETAILED": "A more detailed list of inspirational figures, where each name is followed by a brief parenthetical description of their specific contribution or style (e.g., Charles Stanley (pastoral and welcoming teaching), David Wilkerson (prophetic and broken messages), A. W. Tozer (intimacy with God)).",
-    "TONE_VERB_1, TONE_VERB_2, TONE_VERB_3": "Verbs describing the desired tone.",
+    "TONE_VERB_1, TONE_VERB_2, TONE_VERB_3, TONE_VERB_4": "Verbs describing the desired tone.",
     "AVOID_TONE_1, AVOID_TONE_2, AVOID_TONE_3": "Tones to be completely avoided.",
     "TONE_DESCRIPTION_DETAILED": "A detailed description of the script's tone, outlining its intended effect on the viewer and its underlying philosophy (e.g., Therapeutic and clarifying. It guides the viewer to awareness without guilt.).",
     "TITLE_THEME_ADJECTIVES": "Adjectives for the theme title (e.g., profound, revealing, practical).",
