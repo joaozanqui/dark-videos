@@ -5,6 +5,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 import json
 from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
 import scripts.video_build.generate as generate
+import shutil
 
 def create_subtitles(subtitles_path, background_image):
     def subtitle_generator(txt):
@@ -106,14 +107,13 @@ def run():
 
             narration_audio = AudioFileClip(audio_path)
             music_audio = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
-            subtitles_path = generate.subtitles(audio_path, output_path=f"storage/though/{i}/{j}")
-
- 
+            subtitles_path = generate.subtitles(audio_path, output_path=f"storage/thought/{i}/{j}")
 
             create_video(image_path, narration_audio, music_audio, subtitles_path, output_video_path)
 
             output_thumbnail_path = str(final_dir / f"thumbnail.png")
-            generate.thumbnail(image_path, title['title'], output_thumbnail_path)
+            # generate.thumbnail(image_path, title['title'], output_thumbnail_path)
+            shutil.copy2(image_path, output_thumbnail_path)
 
             output_infos_path = str(final_dir / f"infos.txt")
             save_infos(title['title'], description_file, output_infos_path)
