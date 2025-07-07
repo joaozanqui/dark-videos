@@ -32,7 +32,7 @@ def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
     
     return response
 
-def run(insights_p1, insights_p2, insights_p3):
+def run(insights_p1, insights_p2, insights_p3, analysis_id):
     gemini_model = get_gemini_model()
 
     if insights_p1 and insights_p2 and insights_p3:
@@ -41,9 +41,10 @@ def run(insights_p1, insights_p2, insights_p3):
         with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
             channels = json.load(file) 
 
-        for i, channel in enumerate(channels):
-            images_prompt_path = f"storage/ideas/channels/{i}/"
+        images_prompt_path = f"storage/ideas/channels/{i}/"
+        export('analysis', analysis_id, path=images_prompt_path)
 
+        for i, channel in enumerate(channels):
             for step in ["logo", "profile", "banner", "description"]:
                 if not os.path.exists(f"{images_prompt_path}{step}.txt"):
                     prompt = get_channel_info_prompt(channel, insights_p1, insights_p2, gemini_model, step=step)

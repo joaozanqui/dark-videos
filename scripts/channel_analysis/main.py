@@ -1,3 +1,5 @@
+import os
+
 from scripts.channel_analysis.utils import (
     get_youtube_channel_url
 )
@@ -21,7 +23,7 @@ from scripts.utils import (
     export
 )
 
-def transcripts_analysis(most_viewed_videos, channel_name, model):
+def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path):
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
     analysis = ''
@@ -39,12 +41,12 @@ def transcripts_analysis(most_viewed_videos, channel_name, model):
         print("Failed to get insights from Phase 3.")
         return None
     
-    insights_p3_path = export('insights_p3', insights_p3, path='storage/analysis/')
+    insights_p3_path = export('insights_p3', insights_p3, path=analysis_path)
     print(f"Insights of Phase 3 (Transcripts Analysis) saved at {insights_p3_path}")
     
     return insights_p3
     
-def comments_analysis(most_viewed_videos, model):    
+def comments_analysis(most_viewed_videos, model, analysis_path):    
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
        
@@ -65,12 +67,12 @@ def comments_analysis(most_viewed_videos, model):
         print("Failed to get insights from Phase 2.")
         return None
     
-    insights_p2_path = export('insights_p2', insights_p2, path='storage/analysis/')
+    insights_p2_path = export('insights_p2', insights_p2, path=analysis_path)
     print(f"Insights of Phase 2 (Comments Analysis) saved at {insights_p2_path}")
     
     return insights_p2
     
-def channel_analysis(channel_name, channel_description, videos_list, model):    
+def channel_analysis(channel_name, channel_description, videos_list, model, analysis_path):    
     prompt_p1 = generate_phase1_prompt(channel_name, channel_description, videos_list)
     insights_p1 = analyze_with_gemini(prompt_p1, model)
     
@@ -78,7 +80,7 @@ def channel_analysis(channel_name, channel_description, videos_list, model):
         print("Failed to get insights from Phase 1.")
         return None
     
-    insights_p1_path = export('insights_p1', insights_p1, path='storage/analysis/')
+    insights_p1_path = export('insights_p1', insights_p1, path=analysis_path)
     print(f"Insights of Phase 1 (Video Data Analysis) saved at {insights_p1_path}")
     return insights_p1
 
@@ -100,8 +102,22 @@ def get_channel_data(channel_url):
     
     return youtube_data        
 
+def get_next_analysis():
+    default_folder = 'storage/analysis'
+
+    analysis_folders = [
+        int(nome) for nome in os.listdir(default_folder)
+        if os.path.isdir(os.path.join(default_folder, nome)) and nome.isdigit()
+    ]
+    analysis_folders.sort()
+
+    next_analysis_id = analysis_folders[-1] + 1 if analysis_folders else 0
+    analysis_path = f"{default_folder}/{str(next_analysis_id)}"
+    return [next_analysis_id, analysis_path]
+
 def run_full_analysis_pipeline():
     gemini_model = get_gemini_model()
+    analysis_id, analysis_path = get_next_analysis()
     
     print("\n--- Step 1: Fetching YouTube Channel Data ---")
     channel_url = get_youtube_channel_url()
@@ -110,12 +126,12 @@ def run_full_analysis_pipeline():
     most_viewed_videos = sorted(videos_list, key=lambda x: x["viewCount"], reverse=True)
     
     print("\n--- Phase 1: Initial Channel Analysis (using Gemini) ---")
-    insights_p1 = channel_analysis(channel_name, channel_description, videos_list, gemini_model)
+    insights_p1 = channel_analysis(channel_name, channel_description, videos_list, gemini_model, analysis_path)
     
     print("\n--- Phase 2: Comment Analysis (using Gemini) ---")
-    insights_p2 = comments_analysis(most_viewed_videos, gemini_model)
+    insights_p2 = comments_analysis(most_viewed_videos, gemini_model, analysis_path)
 
     print("\n--- Phase 3: Transcript Analysis (using Gemini) ---")
-    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, gemini_model)
+    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, gemini_model, analysis_path)
 
-    return [insights_p1, insights_p2, insights_p3]
+    return [insights_p1, insights_p2, insights_p3, analysis_id]
