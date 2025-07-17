@@ -32,7 +32,7 @@ def copy_image_to_right_path(final_path: str) -> Optional[Path]:
         print(f"\nOcorreu um erro inesperado: {e}")
         return None
 
-def run():
+def run(channel_id):
     # https://www.freepik.com/pikaso/ai-image-generator
     path = Path("storage/thought")
     channels_path = "storage/ideas/channels.json"
@@ -45,6 +45,9 @@ def run():
         return
 
     for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
+        if channel.name != channel_id:
+            continue
+        
         if channel.is_dir():
             print(f"Channel: '{channels[int(channel.name)]['name']}'")
             for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):

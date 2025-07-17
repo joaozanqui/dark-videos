@@ -67,7 +67,7 @@ def save_infos(title, description_file, output_path):
     return    
 
 
-def run():
+def run(channel_id):
     print("--- Building Videos ---\n")
     music_mood = "calm"
 
@@ -75,6 +75,9 @@ def run():
         channels = json.load(file)    
 
     for i, channel in enumerate(channels):
+        if i != int(channel_id):
+            continue 
+
         print(f"- {channel['name']}")
         with open(f"storage/ideas/titles/{i}.json", "r", encoding="utf-8") as file:
             titles = json.load(file)

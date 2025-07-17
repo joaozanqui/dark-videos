@@ -112,7 +112,7 @@ def get_next_analysis():
     analysis_folders.sort()
 
     next_analysis_id = analysis_folders[-1] + 1 if analysis_folders else 0
-    analysis_path = f"{default_folder}/{str(next_analysis_id)}"
+    analysis_path = f"{default_folder}/{str(next_analysis_id)}/"
     return [next_analysis_id, analysis_path]
 
 def run_full_analysis_pipeline():

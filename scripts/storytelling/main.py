@@ -75,13 +75,16 @@ def handle_variables(channel, channel_n, language):
     return variables
 
 
-def run():
+def run(channel_id):
     language = get_final_language()
 
     with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
         channels = json.load(file)    
 
     for i, channel in enumerate(channels):
+        if i != int(channel_id):
+            continue
+        
         print(f"- {channel['name']}")
         with open(f"storage/ideas/titles/{i}.json", "r", encoding="utf-8") as file:
             titles = json.load(file)

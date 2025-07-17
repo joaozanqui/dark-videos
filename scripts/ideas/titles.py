@@ -28,7 +28,7 @@ def titles_generation_prompt(
     prompt_file = "scripts/ideas/prompts/titles-generation.txt"
     return get_prompt(prompt_file, variables)
 
-def run(insights_p1, insights_p2, insights_p3, channel, channel_num, model):
+def run(insights_p1, insights_p2, insights_p3, channel, model):
     language = get_final_language()
 
     prompt = titles_generation_prompt(insights_p1, insights_p2, insights_p3, channel, language)   
@@ -46,7 +46,5 @@ def run(insights_p1, insights_p2, insights_p3, channel, channel_num, model):
         return None
 
     print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
-    title_ideas_path = export(f"{channel_num}", titles_json, format='json',path='storage/ideas/titles/')
-    print(f"Title Ideas saved at {title_ideas_path}")
     
-    return title_ideas
+    return titles_json

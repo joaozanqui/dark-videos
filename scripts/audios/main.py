@@ -66,7 +66,7 @@ def merge_audio(audios_paths, final_path):
 
     return str(output_path)
 
-def run() -> Optional[Path]:
+def run(channel_id) -> Optional[Path]:
     # https://www.capcut.com/magic-tools/text-to-speech
     automatic_download = True
     path = Path("storage/thought")
@@ -80,6 +80,9 @@ def run() -> Optional[Path]:
         return
 
     for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
+        if channel.name != channel_id:
+            continue
+        
         if channel.is_dir():
             print(f"Channel: '{channels[int(channel.name)]['name']}'")
             for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
@@ -128,5 +131,3 @@ def run() -> Optional[Path]:
     # browsing.goto_page(capcut_generate_audio_page)
     # audios_paths = capcut.run(texts)
     # audio_path = merge_audio(audios_paths)
-        
-    return audio_path
