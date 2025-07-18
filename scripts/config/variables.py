@@ -1,4 +1,5 @@
-from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response, get_prompt
+from scripts.utils import analyze_with_gemini, format_json_response, get_prompt, get_final_language, get_videos_duration, export
+import os
 
 VARIABLES = f'''
     [{{    
@@ -115,7 +116,8 @@ def get_variables(phase1_insights, phase2_insights, phase3_insights, channel):
         "variables": VARIABLES
     }
 
-    prompt = get_prompt('scripts/storytelling/prompts/get_variables.txt', prompt_variables)
+    default_prompt_path = 'default_prompts/prompts/get_variables.txt'
+    prompt = get_prompt(default_prompt_path, prompt_variables)
     
     response = analyze_with_gemini(prompt)
 
@@ -125,3 +127,43 @@ def get_variables(phase1_insights, phase2_insights, phase3_insights, channel):
         return set_qty_variables(variables_without_period)
     
     return {}
+
+
+def build(insights_p1, insights_p2, insights_p3, channel):    
+    print(f" - Variables...")
+
+    language = get_final_language()
+    duration = get_videos_duration()
+
+    variables = get_variables(insights_p1, insights_p2, insights_p3, channel)
+
+    def has_invalid_keys():
+        invalid_keys = []
+
+        for key in variables:
+            if "," in key:
+                invalid_keys.append(key)
+
+        return len(invalid_keys) > 0
+    
+    if not variables or has_invalid_keys():
+        return run(language, insights_p1, insights_p2, insights_p3, channel)
+
+    variables['LANGUAGE_AND_REGION'] = language
+    variables['VIDEO_DURATION'] = duration
+    
+    return variables
+
+def run(channel, insights_p1, insights_p2, insights_p3):
+    path = f"storage/thought/{channel['id']}/"
+    variables_file = os.path.join(path, 'variables.json')
+
+    # if os.path.exists(variables_file):
+    #     with open(variables_file, "r", encoding="utf-8") as file:
+    #         variables = json.load(file)     
+    #     return variables
+    
+    variables = build(insights_p1, insights_p2, insights_p3, channel)
+    export('variables', variables, format='json', path=path)
+
+    return variables

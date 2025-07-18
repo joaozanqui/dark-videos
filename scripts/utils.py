@@ -123,6 +123,7 @@ def get_prompt(prompt_file, variables):
     prompt_path = f"{prompt_file}"
     with open(prompt_path, "r", encoding="utf-8") as file:
         prompt_template = file.read()
+        
     template = Template(prompt_template)
     prompt = template.safe_substitute(variables)
     
@@ -163,3 +164,14 @@ def get_language_code(language_input: str) -> str | None:
         return 'de'
     
     return None
+
+def get_variables(channel_id):
+    path = f"storage/thought/{channel_id}/"
+    file = os.path.join(path, 'variables.json')
+
+    if os.path.exists(file):
+        with open(file, "r", encoding="utf-8") as file:
+            variables = json.load(file)     
+        return variables
+    
+    return []

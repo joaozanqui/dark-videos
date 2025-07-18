@@ -104,6 +104,8 @@ def get_channel_data(channel_url):
 
 def get_next_analysis():
     default_folder = 'storage/analysis'
+    os.makedirs(default_folder, exist_ok=True)
+
 
     analysis_folders = [
         int(nome) for nome in os.listdir(default_folder)

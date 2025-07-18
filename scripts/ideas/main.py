@@ -1,6 +1,5 @@
 
 import scripts.ideas.new_channel as new_channel 
-import scripts.ideas.titles as titles
 from scripts.utils import get_gemini_model, analyze_with_gemini, export
 import json
 from string import Template
@@ -38,11 +37,19 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
     if insights_p1 and insights_p2 and insights_p3:
         print("\n--- Generating Viral Channel and Videos Ideas (using Gemini) ---")
 
-        with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
-            old_channels = json.load(file) 
-        next_channel_id = max(channel["id"] for channel in old_channels) + 1
+        channels_path = 'storage/ideas'
+        os.makedirs(channels_path, exist_ok=True)
 
-        new_channels = new_channel.run(insights_p1, insights_p2, insights_p3, next_channel_id, gemini_model)
+        channels_file = f"{channels_path}/channels.json"
+        if os.path.exists(channels_file):
+            with open(channels_file, "r", encoding="utf-8") as file:
+                old_channels = json.load(file) 
+        else:
+            old_channels = []
+
+        next_channel_id = max(channel["id"] for channel in old_channels) + 1 if len(old_channels) else 1
+
+        new_channels = new_channel.run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, gemini_model)
         old_channels.extend(new_channels)
 
         channels_ideas = export('channels', old_channels, format='json',path='storage/ideas/')
@@ -51,17 +58,13 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
         for i, channel in enumerate(new_channels):
             channel_id = i + next_channel_id
             images_prompt_path = f"storage/ideas/channels/{channel_id}/"
-            export('analysis', str(analysis_id), path=images_prompt_path)
+
             for step in ["logo", "profile", "banner", "description"]:
                 if not os.path.exists(f"{images_prompt_path}{step}.txt"):
                     prompt = get_channel_info_prompt(channel, insights_p1, insights_p2, gemini_model, step=step)
                     if not prompt: 
                         return None
                     export(step, prompt, path=images_prompt_path)
-            titles_ideas = titles.run(insights_p1, insights_p2, insights_p3, channel, gemini_model)
-            title_ideas_path = export(f"{channel_id}", titles_ideas, format='json',path='storage/ideas/titles/')
-            print(f"Title Ideas saved at {title_ideas_path}")
-
     else:
         print("\nSkipping as not all preceding insights are available.")
         return {}
