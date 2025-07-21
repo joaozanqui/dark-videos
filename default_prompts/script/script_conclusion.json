@@ -5,6 +5,7 @@
             "Don't tell them what to do, for example: 'Common mistake', 'Practical exercise', 'Real case', 'Serious mistake' etc.",
             "Dont't tell the script duration at any time.",
             "Don't write any title, only the required text, please.",
+            "Don't write any visual instruction, only the required text, please.",
             "Don't write any instructions, only the required text, please."
         ],
         "main_task": "Excellent! You can now write the conclusion in ${LANGUAGE_AND_REGION}. Please note that the conclusion chapter is ${CONCLUSION_DURATION} minutes long! Don't include emojis (❌, ✅, 👉, etc.). Always add a period to headings and subheadings, for example: “Listen carefully”. (Add a period (.))."

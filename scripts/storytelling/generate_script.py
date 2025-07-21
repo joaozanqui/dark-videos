@@ -20,7 +20,7 @@ def normalize(text):
 
 def has_multiple_forbidden_terms(full_script, language):
     normalized = normalize(full_script)
-    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|topic|theme)\b'
+    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|topic|theme|visual)\b'
     matches = re.findall(pattern, normalized)
 
     error = len(matches) > 1 or not is_language_right(full_script, language)
