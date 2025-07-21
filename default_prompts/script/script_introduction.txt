@@ -1,8 +1,0 @@
-You can start writing the script in ${LANGUAGE_AND_REGION}, Start with the introduction. Please note that the introduction chapter is ${INTRODUCTION_DURATION} minutes long! Don't include emojis (❌, ✅, 👉, etc.). Always add a period to headings and subheadings, for example: “Listen carefully”. (Add a period (.)). Don't tell them what to do, for example: "Common mistake", "Practical exercise", "Real case", "Serious mistake" etc. Dont't tell the script duration at any time. Don't write any instructions, only the required text, please.
-
-**Context for the Introduction:**
-- Introduction Title: ${INTRODUCTION_TITLE}
-- Key Talking Points:
-${INTRODUCTION_BULLET_POINTS}
-
-Begin writing the introduction text directly in ${LANGUAGE_AND_REGION}.

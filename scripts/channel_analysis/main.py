@@ -31,11 +31,11 @@ def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path)
     for video in videos:
         transcripts = get_transcripts(video['video_id'])
         prompt_p3 = generate_phase3_prompt(transcripts, video['title'])
-        analysis += analyze_with_gemini(prompt_p3, model)
+        analysis += analyze_with_gemini(prompt_text=prompt_p3, gemini_model=model)
         analysis += "\n"
     
     prompt_p3 = generate_phase3_merge_prompt(analysis, most_viewed_videos_qty, channel_name)
-    insights_p3 = analyze_with_gemini(prompt_p3, model)
+    insights_p3 = analyze_with_gemini(prompt_text=prompt_p3, gemini_model=model)
     
     if not insights_p3:
         print("Failed to get insights from Phase 3.")
@@ -61,7 +61,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
         comments_text += "\n"    
         
     prompt_p2 = generate_phase2_prompt(comments_text)
-    insights_p2 = analyze_with_gemini(prompt_p2, model)
+    insights_p2 = analyze_with_gemini(prompt_text=prompt_p2, gemini_model=model)
     
     if not insights_p2:
         print("Failed to get insights from Phase 2.")
@@ -74,7 +74,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
     
 def channel_analysis(channel_name, channel_description, videos_list, model, analysis_path):    
     prompt_p1 = generate_phase1_prompt(channel_name, channel_description, videos_list)
-    insights_p1 = analyze_with_gemini(prompt_p1, model)
+    insights_p1 = analyze_with_gemini(prompt_text=prompt_p1, gemini_model=model)
     
     if not insights_p1:
         print("Failed to get insights from Phase 1.")

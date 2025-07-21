@@ -91,7 +91,7 @@ def run_process():
     
     action = 0
     print("Actions:\n")
-    while action < 1 or action > 6:
+    while action < 1 or action > 11:
         for i, act in enumerate(actions):
             print(f"{i + 1} - {act}")
         action = int(input(f"\t-> "))

@@ -24,7 +24,7 @@ def build_prompt_template(channel, insights_p1, insights_p2, step):
 
 def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
     prompt = build_prompt_template(channel, insights_p1, insights_p2, step)
-    response = analyze_with_gemini(prompt, gemini_model=model)
+    response = analyze_with_gemini(prompt_text=prompt, gemini_model=model)
     
     if not response:
         return None

@@ -1,7 +1,7 @@
 import os
 import google.generativeai as genai
 from config.config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
-from typing import Optional
+from typing import Optional, Dict, Any
 import re
 import json
 from string import Template
@@ -65,14 +65,32 @@ def get_gemini_model(
     except Exception as e:
         print(f"Error initializing Gemini model: {e}")
         return None
+    
+def handle_prompt(prompt_text: str = '', prompt_json: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    content_to_send = prompt_text
+    if prompt_json:
+        try:
+            content_to_send = json.dumps(prompt_json, indent=2, ensure_ascii=False)
+        except TypeError as e:
+            print(f"Error: The provided dictionary could not be serialized to JSON. Details: {e}")
+            return None
+    
+    if not content_to_send:
+        print("Error: No prompt was provided (prompt_text and prompt_json are both empty).")
+        return None
 
-def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> Optional[str]:
+    return content_to_send
+
+def analyze_with_gemini(prompt_text: str = '', prompt_json: Optional[Dict[str, Any]] = None, gemini_model = get_gemini_model()) -> Optional[str]:
     time.sleep(10)
     if not gemini_model:
         print("Error: Gemini model is not initialized. Check API Key and config.")
         return "Error: Gemini model not initialized."
+    
+    prompt = handle_prompt(prompt_text, prompt_json)
+    
     try:
-        response = gemini_model.generate_content(prompt_text)
+        response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:
         if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
@@ -81,6 +99,8 @@ def analyze_with_gemini(prompt_text: str, gemini_model = get_gemini_model()) -> 
         print(f"Error during Gemini API call: {e}")
         return None
     
+
+
 def refactor_dict(json_file):
     items = []
     for item in json_file:
@@ -88,15 +108,12 @@ def refactor_dict(json_file):
             items.append(item)
         else:
             print(f"Skipping invalid item structure: {item}")
-
-    if(len(items) == 1):
-        return items[0]
     
     return items
 
 def format_json_response(response):
     
-    json_match = re.search(r'```json\s*(\[.*?\])\s*```', response, re.DOTALL | re.IGNORECASE)
+    json_match = re.search(r'```json\s*([\s\S]+?)\s*```', response, re.IGNORECASE)
     if json_match:
         json_str = json_match.group(1)
     else:
@@ -110,12 +127,16 @@ def format_json_response(response):
     try:
         json_file = json.loads(json_str)
         if isinstance(json_file, list): 
-            return refactor_dict(json_file)
+            refactored_dict = refactor_dict(json_file)
+            return refactored_dict
+        elif isinstance(json_file, dict):
+            refactored_dict = refactor_dict([json_file])[0]
+            return refactored_dict
         else:
             print("  - Warning: LLM response for subject was not a JSON list.")
 
-    except json.JSONDecodeError:
-        print(f"\t\t\t - Error decoding JSON from subject response.") 
+    except Exception as e:
+        print(f"\t\t\t - Error decoding JSON from subject response.: {e}") 
     
     return []
 
@@ -172,6 +193,18 @@ def get_variables(channel_id):
     if os.path.exists(file):
         with open(file, "r", encoding="utf-8") as file:
             variables = json.load(file)     
+        for variable in variables:
+            variable = sanitize_text(variable)
         return variables
     
     return []
+
+def sanitize_text(text):
+    if isinstance(text, str):
+        return (
+            text.replace('\\', '\\\\')
+                .replace('"', "'")
+                .replace('\n', '\\n')
+                .replace('\t', '\\t')
+        )
+    return text

@@ -27,7 +27,7 @@ def new_channel_ideas_prompt(
 def run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, model):   
     language = get_final_language()
     prompt = new_channel_ideas_prompt(insights_p1, insights_p2, insights_p3, language)   
-    channels = analyze_with_gemini(prompt, model)
+    channels = analyze_with_gemini(prompt_text=prompt, gemini_model=model)
     
     if not channels:
         print("Failed to generate channels ideas")

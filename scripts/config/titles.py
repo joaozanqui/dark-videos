@@ -1,12 +1,7 @@
-from scripts.utils import get_prompt, export, analyze_with_gemini, get_final_language
+from scripts.utils import get_prompt, export, analyze_with_gemini, get_final_language, sanitize_text
 import re
 import os
 import json
-
-def channel_instructions(channel):
-    text = f"**Channel Name:** {channel['name']}\n**Niche:** {channel['type']}\n**Target Audience:** {channel['public']}\n**Channel's Main Objective:** {channel['main_concept']}\n**Language Style:** {channel['style']}\n**Channel Overview:** {channel['explanation']}"
-
-    return text
 
 def build_prompt(
     phase1_insights: str,
@@ -19,33 +14,34 @@ def build_prompt(
     json_format_response = f'''[{{"title": "title in {language}", "rationale": "explanation text"}}]'''
 
     other_variables = {
-        "phase1_insights": phase1_insights,
-        "phase2_insights": phase2_insights,
-        "phase3_insights": phase3_insights,
-        "channel": channel_instructions(channel),
-        "json_format_response": json_format_response,
+        "phase1_insights": sanitize_text(phase1_insights),
+        "phase2_insights": sanitize_text(phase2_insights),
+        "phase3_insights": sanitize_text(phase3_insights),
+        "channel": sanitize_text(str(channel)),
+        "json_format_response": sanitize_text(json_format_response),
         "language": language
     }
 
     variables.update(other_variables)
     
-    template_prompt_file = "default_prompts/script/titles-generation.txt"
+    template_prompt_file = "default_prompts/script/titles-generation.json"
     prompt = get_prompt(template_prompt_file, variables)
+    prompt_json = json.loads(prompt)
 
     export_path = f"storage/prompts/{channel['id']}/"
-    export('titles', prompt, path=export_path)
+    export('titles', prompt_json, format='json',path=export_path)
 
     return prompt
 
 def run(channel_id):
-    prompt_file = f"storage/prompts/{channel_id}/titles.txt"
+    prompt_file = f"storage/prompts/{channel_id}/titles.json"
     if os.path.exists(prompt_file):
         with open(prompt_file, "r", encoding="utf-8") as file:
             prompt = file.read() 
     else:
         return []
     
-    title_ideas = analyze_with_gemini(prompt)
+    title_ideas = analyze_with_gemini(prompt_json=prompt)
     
     if not title_ideas:
         print("Failed to generate title ideas from Phase 4.")

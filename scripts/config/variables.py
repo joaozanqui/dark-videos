@@ -1,5 +1,6 @@
-from scripts.utils import analyze_with_gemini, format_json_response, get_prompt, get_final_language, get_videos_duration, export
+from scripts.utils import analyze_with_gemini, format_json_response, get_prompt, get_final_language, get_videos_duration, export, sanitize_text
 import os
+import json
 
 VARIABLES = f'''
     [{{    
@@ -108,18 +109,19 @@ def remove_variables_period(variables):
     }
 
 def get_variables(phase1_insights, phase2_insights, phase3_insights, channel):
+
     prompt_variables = {
-        "channel": channel,
-        "phase1_insights": phase1_insights,
-        "phase2_insights": phase2_insights,
-        "phase3_insights": phase3_insights,
-        "variables": VARIABLES
+        "channel": sanitize_text(str(channel)),
+        "phase1_insights": sanitize_text(phase1_insights),
+        "phase2_insights": sanitize_text(phase2_insights),
+        "phase3_insights": sanitize_text(phase3_insights),
+        "variables": sanitize_text(VARIABLES)
     }
 
-    default_prompt_path = 'default_prompts/prompts/get_variables.txt'
+    default_prompt_path = 'default_prompts/script/get_variables.json'
     prompt = get_prompt(default_prompt_path, prompt_variables)
-    
-    response = analyze_with_gemini(prompt)
+    prompt_json = json.loads(prompt)
+    response = analyze_with_gemini(prompt_json=prompt_json)
 
     variables = format_json_response(response) 
     if variables:
