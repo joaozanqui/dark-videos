@@ -10,7 +10,6 @@ def build_template(variables, step, file_name):
 
     template = Template(prompt_template)
     prompt_str = template.safe_substitute(variables)
-    export('teste1', prompt_str, path='./')
 
     prompt_json = json.loads(prompt_str)
     
