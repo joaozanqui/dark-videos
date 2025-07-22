@@ -73,7 +73,6 @@ def render_video(audio, video, output_path):
         audio_codec='aac',
         temp_audiofile='audio.m4a',
         remove_temp=True,
-        logger=None
     )
     
     print("\t\t-Video built successful!")
@@ -161,7 +160,8 @@ def run(channel_id):
         
         output_thumbnail_path = str(final_dir / f"thumbnail.png")
         # generate.thumbnail(image_path, title['title'], output_thumbnail_path)
-        shutil.copy2(image_path, output_thumbnail_path)
+        if os.path.exists(image_path):
+            shutil.copy2(image_path, output_thumbnail_path)
 
         output_infos_path = str(final_dir / f"infos.txt")
         save_infos(title['title'], description_file, output_infos_path)

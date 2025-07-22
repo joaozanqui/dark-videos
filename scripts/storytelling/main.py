@@ -73,6 +73,8 @@ def run(channel_id):
         if not has_topics:
             print(f"\t\t - Topics...")
             variables['TOPICS'] = get_topics(variables, topics_template_prompt, topics_agent)
+            if not variables['TOPICS']:
+                return run(channel_id)
             export('topics', variables['TOPICS'], format='json', path=f"{video_path}")
             if isinstance(variables['TOPICS'], list):
                 variables['TOPICS'] = variables['TOPICS'][0]

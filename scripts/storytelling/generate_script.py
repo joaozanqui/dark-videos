@@ -2,7 +2,7 @@ import re
 import unicodedata
 import langid
 from scripts.storytelling.utils import build_template
-from scripts.utils import get_language_code, export
+from scripts.utils import get_language_code, export, sanitize_text
 
 def is_language_right(text, language):
     language_code = get_language_code(language)
@@ -20,13 +20,14 @@ def normalize(text):
 
 def has_multiple_forbidden_terms(full_script, language):
     normalized = normalize(full_script)
-    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|topic|theme|visual)\b'
+    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|\(topic|topic\)|Topic|theme|visual)\b'
     matches = re.findall(pattern, normalized)
 
     error = len(matches) > 1 or not is_language_right(full_script, language)
 
     if error:
-        print("\t\t -Script generated with forbidden terms... Trying again...")
+        export('full_script', full_script, path='./')
+        print("\t\t\t - Script generated with forbidden terms... Trying again...")
 
     return error
 
@@ -52,11 +53,11 @@ def save_topics_variables(topics, video_duration):
 
     variables = {
         "INTRODUCTION_TITLE": introduction['title'],
-        "INTRODUCTION_BULLET_POINTS": "; ".join(f"{point}" for point in introduction_bullet_points),
+        "INTRODUCTION_BULLET_POINTS": "; ".join(f"{sanitize_text(point)}" for point in introduction_bullet_points),
         "DEVELOPMENTS": developments,
         "DEVELOPMENT_QTY": len(developments),
         "CONCLUSION_TITLE": conclusion['title'],
-        "CONCLUSION_BULLET_POINTS": "; ".join(f"- {point}" for point in conclusion_bullet_points),
+        "CONCLUSION_BULLET_POINTS": "; ".join(f"- {sanitize_text(point)}" for point in conclusion_bullet_points),
         "INTRODUCTION_DURATION": introduction_and_conclusion_duration / 2,
         "DEVELOPMENT_DURATION": development_duration,
         "CONCLUSION_DURATION": introduction_and_conclusion_duration / 2
@@ -64,7 +65,7 @@ def save_topics_variables(topics, video_duration):
 
     return variables
 
-def run(variables, agent, channel_n, title_n, video_title, script_template_prompt):
+def run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt=0):
     topics_variables = save_topics_variables(variables['TOPICS'], variables['VIDEO_DURATION'])
     variables.update(topics_variables)
     
@@ -76,31 +77,34 @@ def run(variables, agent, channel_n, title_n, video_title, script_template_promp
     introducion = chat.text
 
     full_script = introducion
-    if has_multiple_forbidden_terms(full_script, variables['LANGUAGE_AND_REGION']):
-        return run(variables, agent, channel_n, title_n, video_title, script_template_prompt)
+    if has_multiple_forbidden_terms(introducion, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
+        attempt += 1
+        return run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
     
     for i, development_topic in enumerate(variables['DEVELOPMENTS']):
         variables['DEVELOPMENT_CHAPTER_NUMBER'] = i + 1
-        variables['DEVELOPMENT_TITLE'] = development_topic['title']
-        variables['DEVELOPMENT_SUBTOPIC_1'] = development_topic['subtopic_1']
-        variables['DEVELOPMENT_SUBTOPIC_2'] = development_topic['subtopic_2']
-        variables['DEVELOPMENT_SUBTOPIC_3'] = development_topic['subtopic_3']
-        variables['DEVELOPMENT_SUBTOPIC_4'] = development_topic['subtopic_4']
-        variables['DEVELOPMENT_SUBTOPIC_5'] = development_topic['subtopic_5']
+        variables['DEVELOPMENT_TITLE'] = sanitize_text(development_topic['title'])
+        variables['DEVELOPMENT_SUBTOPIC_1'] = sanitize_text(development_topic['subtopic_1'])
+        variables['DEVELOPMENT_SUBTOPIC_2'] = sanitize_text(development_topic['subtopic_2'])
+        variables['DEVELOPMENT_SUBTOPIC_3'] = sanitize_text(development_topic['subtopic_3'])
+        variables['DEVELOPMENT_SUBTOPIC_4'] = sanitize_text(development_topic['subtopic_4'])
+        variables['DEVELOPMENT_SUBTOPIC_5'] = sanitize_text(development_topic['subtopic_5'])
 
         prompt = build_template(variables, step='script', file_name='script_go_next_development')
         chat = chat_history.send_message(prompt)
         full_script += chat.text
 
-        if has_multiple_forbidden_terms(full_script, variables['LANGUAGE_AND_REGION']):
-            return run(variables, agent, channel_n, title_n, video_title, script_template_prompt)
+        if has_multiple_forbidden_terms(chat.text, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
+            attempt += 1
+            return run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
     
     prompt = build_template(variables, step='script', file_name='script_conclusion')
     chat = chat_history.send_message(prompt)
     full_script += chat.text
 
-    if has_multiple_forbidden_terms(full_script, variables['LANGUAGE_AND_REGION']):
-        return (variables, agent, channel_n, title_n, video_title, script_template_prompt)
+    if has_multiple_forbidden_terms(chat.text, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
+        attempt += 1
+        return (variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
 
     export(f"full_script", full_script, path=f"storage/thought/{channel_n}/{title_n}/")        
     return full_script
