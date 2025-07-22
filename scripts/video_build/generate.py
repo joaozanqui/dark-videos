@@ -27,7 +27,8 @@ def expressions(subtitles_path, output_path):
         r"(\d+)\s*\n"
         r"(\d{2}:\d{2}:\d{2},\d{3})\s-->\s"
         r"(\d{2}:\d{2}:\d{2},\d{3})\s*\n"
-        r"((?:.+\n?)+?)(?=\n\d+\n|\Z)"
+        r"((?:.+\n?)+?)"
+        r"(?=\n\d+\n|\s*\Z)"
     )
 
     subtitles_json = []
@@ -43,7 +44,7 @@ def expressions(subtitles_path, output_path):
             "end": end,
             "text": text.replace("'", "")
         })
-    
+
     default_prompt_path = 'default_prompts/build/expressions.json'
     
     all_expressions = []
