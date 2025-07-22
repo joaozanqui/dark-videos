@@ -88,13 +88,12 @@ def merge_videos(duration, temp_paths):
                 selected_clips.append(clip)
                 total_duration += clip.duration
                 
-                print(f"\t\t\t{total_duration:.2f}s/{duration}s")
 
                 if total_duration >= duration:
                     break
 
             except Exception as e:
-                print(f"Erro ao processar vídeo: {e}")
+                print(f"Error processing video: {e}")
 
     return selected_clips
 
