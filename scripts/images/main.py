@@ -34,55 +34,51 @@ def copy_image_to_right_path(final_path: str) -> Optional[Path]:
 
 def run(channel_id):
     # https://www.freepik.com/pikaso/ai-image-generator
-    path = Path("storage/thought")
+    root = Path("storage/thought")
     channels_path = "storage/ideas/channels.json"
 
     with open(channels_path, "r", encoding="utf-8") as file:
         channels = json.load(file)
 
-    if not path.is_dir():
+    if not root.is_dir():
         print(f"Error: No video generated.")
         return
-
-    for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
-        if channel.name != channel_id:
-            continue
-        
-        if channel.is_dir():
-            print(f"Channel: '{channels[int(channel.name)]['name']}'")
-            for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
-                if video.is_dir():
-                    try:
-                        last_file_before_download = get_last_downloaded_file()
-                        last_file = get_last_downloaded_file()
-
-                        final_path = f"storage/thought/{channel.name}/{video.name}"
-                        os.makedirs(final_path, exist_ok=True)
-                        image_files = [
-                            f for f in Path(final_path).iterdir() 
-                            if f.suffix.lstrip(".").lower() in ALLOWED_IMAGES_EXTENSIONS
-                        ]
-
-                        if image_files:
-                            continue
-
-                        prompt_file_path = video / "image_prompt.txt"
-                        image_prompt = prompt_file_path.read_text(encoding="utf-8").strip()
-                        print(f"{channel.name}/{video.name}:\n{image_prompt}")
-                        pyperclip.copy(image_prompt)
-                        # input("--> Copy the prompt, generate the image and save it at 'Downloads' folder.\n--> Press 'Enter' when the image is in 'Downloads' dir")
-                        while last_file == last_file_before_download:
-                            time.sleep(5)
-                            last_file = get_last_downloaded_file()
-                        
-                        copied = copy_image_to_right_path(final_path)
-                        
-                        if not copied:
-                            print("Error coping image...")
-                            return None
-                        print("Successful!\n\n")
-
-                    except Exception as e:
-                        print(f"Error {channel.name}/{video.name}: {e}")
     
-    
+    channel_dir = Path(os.path.join(root, str(channel_id)))
+
+    print(f"Channel: '{channels[channel_id-1]['name']}'")
+    for video in sorted([p for p in channel_dir.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
+        if video.is_dir():
+            try:
+                last_file_before_download = get_last_downloaded_file()
+                last_file = get_last_downloaded_file()
+
+                final_path = f"storage/thought/{channel_id}/{video.name}"
+                os.makedirs(final_path, exist_ok=True)
+                image_files = [
+                    f for f in Path(final_path).iterdir() 
+                    if f.suffix.lstrip(".").lower() in ALLOWED_IMAGES_EXTENSIONS
+                ]
+
+                if image_files:
+                    continue
+
+                prompt_file_path = video / "thumbnail_prompt.txt"
+                image_prompt = prompt_file_path.read_text(encoding="utf-8").strip()
+                print(f"{channel_id}/{video.name}:\n{image_prompt}")
+                pyperclip.copy(image_prompt)
+                # input("--> Copy the prompt, generate the image and save it at 'Downloads' folder.\n--> Press 'Enter' when the image is in 'Downloads' dir")
+                while last_file == last_file_before_download:
+                    time.sleep(5)
+                    last_file = get_last_downloaded_file()
+                
+                copied = copy_image_to_right_path(final_path)
+                
+                if not copied:
+                    print("Error coping image...")
+                    return None
+                print("Successful!\n\n")
+
+            except Exception as e:
+                print(f"Error {channel_id}/{video.name}: {e}")
+

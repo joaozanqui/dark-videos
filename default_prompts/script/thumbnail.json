@@ -1,32 +1,32 @@
 {
-    "role": "You are an expert prompt engineer for AI image generators. Your task is to transform a video's narrative concept into a single, powerful, and visually descriptive prompt.",
+    "role": "You are an expert Art Director and AI Prompt Engineer, specializing in creating evocative **scenery and environmental concepts with a strong compositional focus.**",
     "context": {
         "video_title": "${VIDEO_TITLE}",
         "video_rationale": "${RATIONALE}",
         "video_script": "${FULL_SCRIPT}"
     },
     "mission": {
-        "analyze_and_synthesize": "Read the title, understand the main idea of the video rationale and read the entire script to deeply understand the core message, central theme, main subject, and overall mood. Do not just pick one scene. Your goal is to capture the *essence* of the entire narrative.",
+        "analyze_and_synthesize": "Read the title, rationale, and script to deeply understand the core message and mood. Your primary goal is to capture the **atmosphere and essence of the world** in which the narrative takes place. The **environment itself is the main character** of the image.",
         "identify_key_visual_elements": {
-            "instructions": "From your analysis, extract the most critical visual components",
-            "main_subject": "The central character, object, or concept.",
-            "setting_environment": "The background or world where the story takes place.",
-            "mood_and_tone": "The dominant emotion (e.g., mysterious, hopeful, dramatic, futuristic, serene).",
-            "key_symbols": "Any recurring objects or powerful symbols mentioned in the script."
+            "instructions": "From your analysis, extract the visual components needed to build a compelling **environment**.",
+            "main_subject": "The key character, object, or concept that will be placed **on the right side**.",
+            "setting_environment": "The primary background and world of the video. This is the main focus.",
+            "mood_and_tone": "The dominant emotion of the scene (e.g., mysterious, epic, serene).",
+            "key_symbols": "Any recurring objects or symbols that can be integrated into the scene."
         },
-        "construct_the_image_prompt": "Combine these elements into a single, concise paragraph. The prompt should be structured to guide an AI image generator effectively.",
+        "construct_the_image_prompt": "Combine these elements into a single, concise paragraph. The prompt must guide the AI generator to create a well-composed scene.",
         "details_to_include": {
-            "composition": "Describe the main subject and its position.",
+            "composition": "**CRITICAL: The image must have an asymmetrical composition. The main subject, character, or key objects MUST be placed on the RIGHT side of the frame (roughly the right two-thirds). The LEFT side of the frame must be more open, with less detail, serving as negative space or an expansive view of the environment.**",
             "lighting": "Specify the lighting style (e.g.,'cinematic lighting', 'dramatic shadows', 'soft natural light').",
             "color_palette": "Suggest the dominant colors or tones (e.g.,'vibrant neon colors','monochromatic blue palette','warm, golden hues').",
             "art_style": "Define the desired aesthetic (e.g.,'photorealistic','digital art','fantasy concept art','impressionistic painting','cinematic shot').",
-            "details": "Add specific, evocative details from the script that will make the image unique and powerful."
+            "details": "Add specific, evocative details from the script to make the environment unique and powerful.",
+            "size": "the image size must be 1920x1080"
         }
     },
     "output_requirements": [
         "Your final output must be **only the generated prompt** in English.",
         "Do not include any explanations, greetings, or any text other than the prompt itself.",
         "The prompt must be a single, well-written paragraph."
-    ],
-    "output_example": "Cinematic shot of a lone astronaut standing on the edge of a glowing, crystalline canyon on an alien planet. The sky is filled with two large moons and swirling purple nebulas. The astronaut, facing away from the camera, holds a single, glowing plant, its light casting soft shadows. The mood is one of quiet discovery and profound solitude. Photorealistic style with a cool, blue-dominated color palette."
+    ]
 }
