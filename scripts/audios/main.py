@@ -80,11 +80,11 @@ def run(channel_id) -> Optional[Path]:
         return
 
     for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
-        if channel.name != channel_id:
+        if int(channel.name) != int(channel_id):
             continue
         
         if channel.is_dir():
-            print(f"Channel: '{channels[int(channel.name)]['name']}'")
+            print(f"Channel: '{channels[int(channel.name)-1]['name']}'")
             for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
                 if video.is_dir():
                     try:

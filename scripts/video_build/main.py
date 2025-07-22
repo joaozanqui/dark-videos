@@ -27,7 +27,6 @@ def create_subtitles(subtitles_path, background_image):
     
     return subtitles
 
-
 def create_video(image_path: str, narration_audio: AudioFileClip, music_audio: AudioFileClip, subtitles_path: str, output_path: str):    
     audio = CompositeAudioClip([narration_audio, music_audio])
     background_image = ImageClip(image_path).set_duration(narration_audio.duration)
@@ -66,7 +65,6 @@ def save_infos(title, description_file, output_path):
 
     return    
 
-
 def run(channel_id):
     print("--- Building Videos ---\n")
     music_mood = "calm"
@@ -74,51 +72,54 @@ def run(channel_id):
     with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
         channels = json.load(file)    
 
-    for i, channel in enumerate(channels):
-        if i != int(channel_id):
+    channel = channels[int(channel_id)-1]
+
+    print(f"- {channel['name']}")
+    with open(f"storage/ideas/titles/{channel_id}.json", "r", encoding="utf-8") as file:
+        titles = json.load(file)
+
+    for title_id, title in enumerate(titles):
+        print(f"\t-({channel_id}/{title_id}) {title['title']}")
+        final_path = f"storage/videos/{channel_id}/{title_id}"
+        os.makedirs(final_path, exist_ok=True)
+        final_dir = Path(final_path)
+        output_video_path = str(final_dir / f"video.mp4")
+        if os.path.exists(output_video_path):
+            continue
+
+        default_path = f"storage/thought/{channel_id}/{title_id}"
+        description_file = f"{default_path}/description.txt"
+        audio_path = f"{default_path}/audio.mp3"
+        image_path = ''
+        
+        has_description = os.path.exists(description_file)
+        has_audio = os.path.exists(audio_path)
+        
+        if not has_audio or not has_description:
+            continue
+
+        narration_audio = AudioFileClip(audio_path)
+        music_audio = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
+        subtitles_path = generate.subtitles(audio_path, output_path=default_path)
+        subtitles_with_expressions = generate.expressions(subtitles_path, output_path=default_path)
+
+        # ver o que fazer com a imagem -------------------------------------------------------------------
+        for ext in ALLOWED_IMAGES_EXTENSIONS:
+            has_image = os.path.exists(f"{default_path}/image.{ext}")
+            if has_image:
+                image_path = f"{default_path}/image.{ext}"
+                break
+
+        if not has_image:
             continue 
 
-        print(f"- {channel['name']}")
-        with open(f"storage/ideas/titles/{i}.json", "r", encoding="utf-8") as file:
-            titles = json.load(file)
+        create_video(image_path, narration_audio, music_audio, subtitles_path, output_video_path)
 
-        for j, title in enumerate(titles):
-            print(f"\t-({i}/{j}) {title['title']}")
-            final_path = f"storage/videos/{i}/{j}"
-            os.makedirs(final_path, exist_ok=True)
-            final_dir = Path(final_path)
-            output_video_path = str(final_dir / f"video.mp4")
-            if os.path.exists(output_video_path):
-                continue
+        output_thumbnail_path = str(final_dir / f"thumbnail.png")
+        # generate.thumbnail(image_path, title['title'], output_thumbnail_path)
+        shutil.copy2(image_path, output_thumbnail_path)
 
-            default_path = f"storage/thought/{i}/{j}"
-            description_file = f"{default_path}/description.txt"
-            audio_path = f"{default_path}/audio.mp3"
-            image_path = ''
-            
-            has_description = os.path.exists(description_file)
-            has_audio = os.path.exists(audio_path)
-            
-            for ext in ALLOWED_IMAGES_EXTENSIONS:
-                has_image = os.path.exists(f"{default_path}/image.{ext}")
-                if has_image:
-                    image_path = f"{default_path}/image.{ext}"
-                    break
-            
-            if not has_image or not has_audio or not has_description:
-                continue
-
-            narration_audio = AudioFileClip(audio_path)
-            music_audio = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
-            subtitles_path = generate.subtitles(audio_path, output_path=f"storage/thought/{i}/{j}")
-
-            create_video(image_path, narration_audio, music_audio, subtitles_path, output_video_path)
-
-            output_thumbnail_path = str(final_dir / f"thumbnail.png")
-            # generate.thumbnail(image_path, title['title'], output_thumbnail_path)
-            shutil.copy2(image_path, output_thumbnail_path)
-
-            output_infos_path = str(final_dir / f"infos.txt")
-            save_infos(title['title'], description_file, output_infos_path)
+        output_infos_path = str(final_dir / f"infos.txt")
+        save_infos(title['title'], description_file, output_infos_path)
     
     print("\n--- Process Finished ---")

@@ -59,7 +59,7 @@ def run(channel_id):
         
         has_topics = os.path.exists(f"{video_path}topics.json") or os.path.exists(f"{video_path}topics.txt")
         has_full_script = os.path.exists(f"{video_path}full_script.txt")
-        has_image_prompt = os.path.exists(f"{video_path}image_prompt.txt")
+        has_image_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
         has_description = os.path.exists(f"{video_path}description.txt")
         has_all_files = has_topics and  has_full_script and has_image_prompt and has_description
         
@@ -73,6 +73,9 @@ def run(channel_id):
         if not has_topics:
             print(f"\t\t - Topics...")
             variables['TOPICS'] = get_topics(variables, topics_template_prompt, topics_agent)
+            export('topics', variables['TOPICS'], format='json', path=f"{video_path}")
+            if isinstance(variables['TOPICS'], list):
+                variables['TOPICS'] = variables['TOPICS'][0]
         else:
             with open(f"{video_path}topics.json", "r", encoding="utf-8") as file:
                 variables['TOPICS'] = json.load(file) 
