@@ -5,40 +5,69 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 import json
 from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
 import scripts.video_build.generate as generate
+import scripts.video_build.background_video as background_video
+import scripts.video_build.expressions_images as expressions_images
 import shutil
 
-def create_subtitles(subtitles_path, background_image):
+def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip, intro_file: str):
+    main_audio = CompositeAudioClip([narration_audio, background_music])
+
+    if os.path.exists(intro_file):
+        intro_audio = AudioFileClip(intro_file)
+        final_audio = concatenate_audioclips([intro_audio, main_audio])
+    else:
+        final_audio = main_audio
+
+    return final_audio
+
+def create_subtitles(subtitles_path, background_video_composite):
     def subtitle_generator(txt):
         return TextClip(
             txt,
             font='assets/font.ttf',
-            fontsize=48,
-            color='white',
-            stroke_color='#000000',
-            stroke_width=1.5,
+            fontsize=64,
+            color='yellow',
             method='caption',
             align='center',
-            size=(background_image.w * 0.8, None),
-            bg_color='rgba(0, 0, 0, 0.6)'
+            size=(int(background_video_composite.w * 0.45), None),
+            bg_color='rgba(0, 0, 0, 0.6)',
         )
-    
+
     subtitles = SubtitlesClip(subtitles_path, subtitle_generator)
-    subtitles = subtitles.set_position(lambda t: ('center', background_image.h/2))
-    
+    subtitles_x = int(background_video_composite.w // 2)
+    subtitles_y = int(background_video_composite.h // 2.5)
+    subtitles = subtitles.set_position((subtitles_x, subtitles_y))
+    subtitles = subtitles.set_duration(background_video_composite.duration)
     return subtitles
 
-def create_video(image_path: str, narration_audio: AudioFileClip, music_audio: AudioFileClip, subtitles_path: str, output_path: str):    
-    audio = CompositeAudioClip([narration_audio, music_audio])
-    background_image = ImageClip(image_path).set_duration(narration_audio.duration)
-    subtitles = create_subtitles(subtitles_path, background_image) 
-    
-    final_video = CompositeVideoClip([background_image, subtitles])
-    
-    final_video.audio = audio
-    final_video.fps = 24
+
+def create_video(
+    background_video_composite: CompositeVideoClip,
+    subtitles_path: str,
+    expressions_images_composite: CompositeVideoClip,
+    intro_file: str,
+):
+    subtitles = create_subtitles(subtitles_path, background_video_composite)
+    main_video = CompositeVideoClip([
+        background_video_composite,
+        expressions_images_composite,
+        subtitles
+    ])
+
+    if os.path.exists(intro_file):
+        intro_clip = VideoFileClip(intro_file)
+        final_video = concatenate_videoclips([intro_clip, main_video])
+    else:
+        final_video = main_video
+
+    return final_video
+
+def render_video(audio, video, output_path):       
+    video.audio = audio
+    video.fps = 24
     
     print(f"\t\t-Exporting final video: {output_path}")
-    final_video.write_videofile(
+    video.write_videofile(
         output_path, 
         codec='libx264', 
         audio_codec='aac',
@@ -64,6 +93,14 @@ def save_infos(title, description_file, output_path):
         print(f"\t\t-Error saving infos: {e}")
 
     return    
+
+def fix_subtitles_time(subtitles):
+    last_end = '00:00:00,000'
+    for subtitle in subtitles:
+        subtitle['start'] = last_end
+        last_end = subtitle['end']
+    
+    return subtitles
 
 def run(channel_id):
     print("--- Building Videos ---\n")
@@ -99,22 +136,29 @@ def run(channel_id):
             continue
 
         narration_audio = AudioFileClip(audio_path)
-        music_audio = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
+        background_music = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
         subtitles_path = generate.subtitles(audio_path, output_path=default_path)
         subtitles_with_expressions = generate.expressions(subtitles_path, output_path=default_path)
+        subtitles = fix_subtitles_time(subtitles_with_expressions)
+
+        background_video_composite = background_video.run(narration_audio.duration, output_path=default_path)
+        expressions_path = f"assets/expressions/{channel_id}"
+        expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration)
+        intro_file = f"assets/intros/{channel_id}/intro.mp4"
 
         # ver o que fazer com a imagem -------------------------------------------------------------------
-        for ext in ALLOWED_IMAGES_EXTENSIONS:
-            has_image = os.path.exists(f"{default_path}/image.{ext}")
-            if has_image:
-                image_path = f"{default_path}/image.{ext}"
-                break
+        # for ext in ALLOWED_IMAGES_EXTENSIONS:
+        #     has_image = os.path.exists(f"{default_path}/image.{ext}")
+        #     if has_image:
+        #         image_path = f"{default_path}/image.{ext}"
+        #         break
 
-        if not has_image:
-            continue 
-
-        create_video(image_path, narration_audio, music_audio, subtitles_path, output_video_path)
-
+        # if not has_image:
+        #     continue 
+        audio = create_audio(narration_audio, background_music, intro_file)
+        video = create_video(background_video_composite, subtitles_path, expressions_images_composite, intro_file)
+        render_video(audio, video, output_video_path)
+        
         output_thumbnail_path = str(final_dir / f"thumbnail.png")
         # generate.thumbnail(image_path, title['title'], output_thumbnail_path)
         shutil.copy2(image_path, output_thumbnail_path)
