@@ -1,52 +1,20 @@
 import os
 from moviepy.editor import VideoFileClip, concatenate_videoclips, CompositeVideoClip
 from moviepy.video.fx.all import crop
-from config.config import PIXABAY_API_KEY
+from config.config import PIXABAY_API_KEYS
 import random
 import requests
+import time
 from tempfile import NamedTemporaryFile
 
-def get_total_hits(query="drone", orientation="horizontal"):
-    url = "https://pixabay.com/api/videos/"
-    params = {
-        "key": PIXABAY_API_KEY,
-        "q": query,
-        "orientation": orientation,
-        "per_page": 3,
-        "page": 1
-    }
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
-    return data["totalHits"]
-
-def search_pixabay_videos(query="drone", orientation="horizontal", per_page=50, page=1):
-    url = "https://pixabay.com/api/videos/"
-    params = {
-        "key": PIXABAY_API_KEY,
-        "q": query,
-        "orientation": orientation,
-        "per_page": per_page,
-        "page": page
-    }
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.json()["hits"]
-
-def download_video(url):
-    response = requests.get(url, stream=True)
-    response.raise_for_status()
-    tmp = NamedTemporaryFile(delete=False, suffix=".mp4")
-    for chunk in response.iter_content(chunk_size=8192):
-        tmp.write(chunk)
-    tmp.close()
-    return tmp.name
-
+PIXABAY_KEY = 0
 
 def resize_and_crop_clip(clip, target_resolution=(1920, 1080)):
     target_w, target_h = target_resolution
+    target_aspect = target_w / target_h
+    clip_aspect = clip.w / clip.h
 
-    if clip.w / clip.h < target_w / target_h:
+    if clip_aspect > target_aspect:
         clip_resized = clip.resize(height=target_h)
     else:
         clip_resized = clip.resize(width=target_w)
@@ -55,63 +23,131 @@ def resize_and_crop_clip(clip, target_resolution=(1920, 1080)):
         clip_resized,
         width=target_w,
         height=target_h,
-        x_center=clip_resized.w // 2,
-        y_center=clip_resized.h // 2
+        x_center=clip_resized.w / 2,
+        y_center=clip_resized.h / 2
     )
 
-def merge_videos(duration, temp_paths):
-    total_hits = get_total_hits()
-    per_page = 50
-    total_pages = max(1, total_hits // per_page)
+def fetch_pixabay_videos_page(page=1, per_page=50, api_key=''):
+    VIDEO_QUERY = "drone"
+    VIDEO_ORIENTATION = "horizontal"
+    
+    if not api_key:
+        return
+    
+    print(f"\t\t\t- Finding videos at Pixabay API (Page {page})...")
+    url = "https://pixabay.com/api/videos/"
+    params = {
+        "key": api_key,
+        "q": VIDEO_QUERY,
+        "orientation": VIDEO_ORIENTATION,
+        "per_page": per_page,
+        "page": page
+    }
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status() 
+        data = response.json()
+        return data.get("hits", [])
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to Pixabay API: {e}")
+        return []
+
+def download_video_to_temp(url: str):
+    try:
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        tmp = NamedTemporaryFile(delete=False, suffix=".mp4")
+        with tmp:
+            for chunk in response.iter_content(chunk_size=8192):
+                tmp.write(chunk)
+        return tmp.name
+    except requests.exceptions.RequestException as e:
+        print(f"\t\t\t\t- Error: {e}")
+        return None
+    
+def next_pixabay_api_key():
+    global PIXABAY_KEY
+    max_key = len(PIXABAY_API_KEYS) - 1
+    PIXABAY_KEY += 1
+    
+    if PIXABAY_KEY > max_key:
+        PIXABAY_KEY = 0
+    
+    return PIXABAY_API_KEYS[PIXABAY_KEY]
+
+def create_background_video(target_duration: float, temp_paths: list):
+    clips = []
     total_duration = 0
-    selected_clips = []
+    page = 1
+    max_pages = 5
+    DOWNLOAD_PAUSE_SECONDS = 5
+    VIDEO_QUALITY = 'tiny'
 
-    attempts = 0
-    max_attempts = 10 * total_pages
-
-    while total_duration < duration and attempts < max_attempts:
-        attempts += 1
-        random_page = random.randint(1, total_pages)
-        hits = search_pixabay_videos(page=random_page, per_page=per_page)
+    while total_duration < target_duration and page <= max_pages:
+        api_key = next_pixabay_api_key()
+        hits = fetch_pixabay_videos_page(page=page, api_key=api_key)
+        if not hits:
+            print("\t\t- No more videos found.")
+            break
+        
         random.shuffle(hits)
 
         for hit in hits:
-            # qualities = ['large', 'medium', 'small', 'tiny']
-            # quality = random.choice(list(hit["videos"].keys()))
-            quality = 'tiny'
-            video_url = hit["videos"][quality]["url"]
+            video_url = hit.get("videos", {}).get(VIDEO_QUALITY, {}).get("url")
+            if not video_url:
+                continue
+            
+            time.sleep(DOWNLOAD_PAUSE_SECONDS)
+            
+            filepath = None
             try:
-                filepath = download_video(video_url)
-                temp_paths.append(filepath)
-                clip = VideoFileClip(filepath)
-                clip = resize_and_crop_clip(clip, target_resolution=(1920, 1080))
-                selected_clips.append(clip)
-                total_duration += clip.duration
+                filepath = download_video_to_temp(video_url)
+                if not filepath:
+                    continue
                 
+                temp_paths.append(filepath)
+                
+                clip = VideoFileClip(filepath)
+                processed_clip = resize_and_crop_clip(clip)
+                
+                clips.append(processed_clip)
+                total_duration += processed_clip.duration
+                print(f"\t\t\t- Current video duration: {total_duration:.2f}s / {target_duration}s")
 
-                if total_duration >= duration:
-                    break
-
+                if total_duration >= target_duration:
+                    break 
+                
             except Exception as e:
-                print(f"Error processing video: {e}")
+                print(f"Erro ao processar o vídeo {video_url}: {e}")
 
-    return selected_clips
+        page += 1
+        if total_duration < target_duration and page <= max_pages:
+            time.sleep(DOWNLOAD_PAUSE_SECONDS)
+            
+    return clips
 
 def run(duration, output_path):
-    output_video_path = f"{output_path}/background_video.mp4"
-    if os.path.exists(output_video_path):
-        return output_video_path
+    final_video_path = os.path.join(output_path, "background_video.mp4")
+    if os.path.exists(final_video_path):
+        return final_video_path
 
     print(f"\t\t-Building a {duration}s background video")
 
-    if PIXABAY_API_KEY is None:
-        raise ValueError("PIXABAY_API_KEY not found in environment variables.")
+    if not PIXABAY_API_KEYS:
+        raise ValueError("PIXABAY_API_KEYS not found in environment variables.")
 
     temp_paths = []
-    selected_clips = merge_videos(duration, temp_paths)
-            
-    if not selected_clips:
-        raise ValueError("Nenhum vídeo válido foi encontrado.")
+    try:
+        selected_clips = create_background_video(duration, temp_paths)
+                
+        if not selected_clips:
+            raise ValueError("No valid video found.")
 
-    final_clip = concatenate_videoclips(selected_clips).subclip(0, duration).without_audio()
-    return CompositeVideoClip([final_clip])
+        final_clip = concatenate_videoclips(selected_clips).subclip(0, duration).without_audio()
+        return CompositeVideoClip([final_clip])
+    finally:
+        for path in temp_paths:
+            try:
+                os.unlink(path)
+            except OSError as e:
+                print(f"Error removing temp file {path}: {e}")

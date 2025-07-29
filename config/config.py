@@ -6,6 +6,7 @@ load_dotenv()
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
 PIXABAY_API_KEY: str | None = os.getenv("PIXABAY_API_KEY")
+PIXABAY_API_KEY_2: str | None = os.getenv("PIXABAY_API_KEY_2")
 
 MODEL_NAME = "gemini-2.0-flash"
 

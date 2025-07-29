@@ -18,7 +18,7 @@ def run(expressions_path, subtitles_with_expressions, duration):
 
         image_path = os.path.join(expressions_path, f"{expression_name}.png")
         if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Expression '{expression_name}' not found at: {image_path}")
+            image_path = os.path.join(expressions_path, f"serious.png")
 
         image_clip = (
             ImageClip(image_path)
