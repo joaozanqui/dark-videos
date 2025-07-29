@@ -67,7 +67,7 @@ def run(channel_id):
                 image_prompt = prompt_file_path.read_text(encoding="utf-8").strip()
                 print(f"{channel_id}/{video.name}:\n{image_prompt}")
                 pyperclip.copy(image_prompt)
-                # input("--> Copy the prompt, generate the image and save it at 'Downloads' folder.\n--> Press 'Enter' when the image is in 'Downloads' dir")
+
                 while last_file == last_file_before_download:
                     time.sleep(5)
                     last_file = get_last_downloaded_file()

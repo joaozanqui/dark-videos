@@ -16,7 +16,7 @@
         "compelling_opening_hook": [
             "(1-3 sentences)",
             "Immediately grab the reader's attention by expanding on the promise of the ${VIDEO_TITLE}.",
-            "Use the ${RATIONALE} to summarize the core message.",
+            "Use the 'video_rationale' to summarize the core message.",
             "Naturally integrate the most important keywords within the first two sentences to maximize SEO impact."
         ],
         "detailed_summary": [
