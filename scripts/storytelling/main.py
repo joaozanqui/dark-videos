@@ -4,6 +4,7 @@ import scripts.storytelling.generate_script as generate_script
 from string import Template
 import json
 import os
+import ast
 
 def get_response(variables, prompt_template, agent):
     prompt_str = prompt_template.safe_substitute(variables)
@@ -59,9 +60,10 @@ def run(channel_id):
         
         has_topics = os.path.exists(f"{video_path}topics.json") or os.path.exists(f"{video_path}topics.txt")
         has_full_script = os.path.exists(f"{video_path}full_script.txt")
-        has_image_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
+        has_thumbnail_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
+        has_thumbnail_data = os.path.exists(f"{video_path}thumbnail_data.json")  
         has_description = os.path.exists(f"{video_path}description.txt")
-        has_all_files = has_topics and  has_full_script and has_image_prompt and has_description
+        has_all_files = has_topics and  has_full_script and has_thumbnail_prompt and has_description and has_thumbnail_data
         
         if has_all_files:
             continue
@@ -91,29 +93,43 @@ def run(channel_id):
 
         if full_script:
             infos_variables = {
-                "VIDEO_TITLE": variables['VIDEO_TITLE'],
-                "RATIONALE": variables['RATIONALE'],
+                "VIDEO_TITLE": sanitize_text(variables['VIDEO_TITLE']),
+                "RATIONALE": sanitize_text(variables['RATIONALE']),
                 "FULL_SCRIPT": sanitize_text(full_script),
-                "LANGUAGE": variables['LANGUAGE_AND_REGION']
+                "LANGUAGE": sanitize_text(variables['LANGUAGE_AND_REGION']),
+                "TOPICS": sanitize_text(str(variables['TOPICS']))
             }
-
-            if not has_image_prompt:
-                print(f"\t\t - Thumbnail prompt...")
-                prompt = build_template(infos_variables, step='script',file_name="thumbnail")
-                thumbnail_prompt = analyze_with_gemini(prompt_json=prompt)
-                export("thumbnail_prompt", thumbnail_prompt, path=video_path)
-            else:
-                with open(f"{video_path}thumbnail_prompt.txt", "r", encoding="utf-8") as file:
-                    thumbnail_prompt = file.read()  
 
             if not has_description:
                 print(f"\t\t - Description...")
-                prompt = build_template(infos_variables, step='script',file_name="video_description")
+                prompt = build_template(infos_variables, step='build',file_name="video_description")
                 description = analyze_with_gemini(prompt_json=prompt)
                 export("description", description, path=video_path)
             else:
                 with open(f"{video_path}description.txt", "r", encoding="utf-8") as file:
                     description = file.read()  
+
+            if not has_thumbnail_data:
+                print(f"\t\t - Thumbnail Data...")
+                infos_variables['DESCRIPTION'] = sanitize_text(description)
+                prompt = build_template(infos_variables, step='build',file_name="thumbnail_data")
+                thumbnail_data_text = analyze_with_gemini(prompt_json=prompt)
+                thumbnail_data = format_json_response(thumbnail_data_text)                
+                export("thumbnail_data", thumbnail_data, format='json', path=video_path)
+            else:
+                with open(f"{video_path}thumbnail_data.json", "r", encoding="utf-8") as file:
+                    thumbnail_data = json.load(file)
+
+            if not has_thumbnail_prompt:
+                print(f"\t\t - Thumbn'ail prompt...")
+                infos_variables['THUMBNAIL_PHRASE'] = sanitize_text(thumbnail_data['phrase'])
+                infos_variables['THUMBNAIL_EXPRESSION'] = sanitize_text(thumbnail_data['expression'])
+                prompt = build_template(infos_variables, step='build',file_name="thumbnail")
+                thumbnail_prompt = analyze_with_gemini(prompt_json=prompt)
+                export("thumbnail_pro'mpt", thumbnail_prompt, path=video_path)
+            else:
+                with open(f"{video_path}thumbnail_prompt.txt", "r", encoding="utf-8") as file:
+                    thumbnail_prompt = file.read()  
 
             print(f"\t\t - Done!")
     return

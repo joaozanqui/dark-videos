@@ -3,15 +3,18 @@
     "context": {
         "video_title": "${VIDEO_TITLE}",
         "video_rationale": "${RATIONALE}",
-        "video_script": "${FULL_SCRIPT}"
+        "video_description": "${DESCRIPTION}",
+        "video_topics": "${TOPICS}",
+        "thumbnail_phrase": "${THUMBNAIL_PHRASE}",
+        "thumbnail_expression": "${THUMBNAIL_EXPRESSION}"
     },
     "mission": {
-        "analyze_and_synthesize": "Read the title, rationale, and script to deeply understand the core message and mood. Your primary goal is to capture the **atmosphere and essence of the world** in which the narrative takes place. The **environment itself is the main character** of the image.",
+        "analyze_and_synthesize": "Read the title, rationale, description, and topics to deeply understand the core message and mood. Your primary goal is to capture the **atmosphere and essence of the world** in which the narrative takes place. The **environment itself is the main character** of the image.",
         "identify_key_visual_elements": {
-            "instructions": "From your analysis, extract the visual components needed to build a compelling **environment**.",
-            "main_subject": "The key character, object, or concept that will be placed **on the right side**.",
+            "instructions": "From your analysis, extract the visual components needed to build a compelling **environment** watching the thumbnail_phrase (${THUMBNAIL_PHRASE}).",
+            "main_subject": "The key character, object, or concept that will be placed **in the bottom right corner**.",
             "setting_environment": "The primary background and world of the video. This is the main focus.",
-            "mood_and_tone": "The dominant emotion of the scene (e.g., mysterious, epic, serene).",
+            "mood_and_tone": "The dominant emotion of the scene based on the thumbnail_expression (${THUMBNAIL_EXPRESSION}).",
             "key_symbols": "Any recurring objects or symbols that can be integrated into the scene."
         },
         "construct_the_image_prompt": "Combine these elements into a single, concise paragraph. The prompt must guide the AI generator to create a well-composed scene.",
@@ -20,7 +23,7 @@
             "lighting": "Specify the lighting style (e.g.,'cinematic lighting', 'dramatic shadows', 'soft natural light').",
             "color_palette": "Suggest the dominant colors or tones (e.g.,'vibrant neon colors','monochromatic blue palette','warm, golden hues').",
             "art_style": "Define the desired aesthetic (e.g.,'photorealistic','digital art','fantasy concept art','impressionistic painting','cinematic shot').",
-            "details": "Add specific, evocative details from the script to make the environment unique and powerful.",
+            "details": "Add specific, evocative details from the topics to make the environment unique and powerful.",
             "size": "the image size must be 1920x1080"
         }
     },
