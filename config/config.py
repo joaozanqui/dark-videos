@@ -5,8 +5,7 @@ load_dotenv()
 
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
-PIXABAY_API_KEY: str | None = os.getenv("PIXABAY_API_KEY")
-PIXABAY_API_KEY_2: str | None = os.getenv("PIXABAY_API_KEY_2")
+PIXABAY_API_KEYS: str | None = os.getenv("PIXABAY_API_KEYS")
 
 MODEL_NAME = "gemini-2.0-flash"
 
@@ -16,8 +15,8 @@ if not GEMINI_API_KEY:
 if not GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY not found in .env file or environment variables.")
 
-if not PIXABAY_API_KEY:
-    raise ValueError("PIXABAY_API_KEY not found in .env file or environment variables.")
+if not PIXABAY_API_KEYS:
+    raise ValueError("PIXABAY_API_KEYS not found in .env file or environment variables.")
 
 try:
     if GEMINI_API_KEY:
