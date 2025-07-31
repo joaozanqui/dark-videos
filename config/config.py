@@ -1,11 +1,12 @@
 import os
 import google.generativeai as genai
+import json
 from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
-PIXABAY_API_KEYS: str | None = os.getenv("PIXABAY_API_KEYS")
+PIXABAY_API_KEYS: list | None = json.loads(os.getenv("PIXABAY_API_KEYS")) if os.getenv("PIXABAY_API_KEYS") else None
 
 MODEL_NAME = "gemini-2.0-flash"
 
