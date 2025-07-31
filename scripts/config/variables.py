@@ -1,5 +1,5 @@
-from scripts.utils import analyze_with_gemini, format_json_response, get_prompt
-import scripts.sanitize as sanitize
+import scripts.utils.handle_text as handle_text
+import scripts.utils.gemini as gemini
 import scripts.database as database
 import json
 
@@ -190,12 +190,10 @@ def has_invalid_keys(variables):
     return len(invalid_keys) > 0
 
 def generate_variables(prompt_variables):
-    default_prompt_path = 'default_prompts/script/set_variables.json'
-
-    prompt = get_prompt(default_prompt_path, prompt_variables)
+    prompt = database.build_prompt('script', 'set_variables', prompt_variables)
     prompt_json = json.loads(prompt)
-    response = analyze_with_gemini(prompt_json=prompt_json)
-    current_variables = format_json_response(response)
+    response = gemini.run(prompt_json=prompt_json)
+    current_variables = handle_text.format_json_response(response)
     
     if has_invalid_keys(current_variables) or not all_variables_generated_properly(prompt_variables['variables_dict'], current_variables):
         print(f"\t\t- Invalid. Generating again...")
@@ -207,17 +205,17 @@ def set_variables(phase1_insights, phase2_insights, phase3_insights, channel):
     all_variables = {}
 
     prompt_variables = {
-        "channel": sanitize.text(str(channel)),
-        "phase1_insights": sanitize.text(phase1_insights),
-        "phase2_insights": sanitize.text(phase2_insights),
-        "phase3_insights": sanitize.text(phase3_insights),
+        "channel": handle_text.sanitize(str(channel)),
+        "phase1_insights": handle_text.sanitize(phase1_insights),
+        "phase2_insights": handle_text.sanitize(phase2_insights),
+        "phase3_insights": handle_text.sanitize(phase3_insights),
     }
     
     for i, current in enumerate(VARIABLES):
         print(f"\t- {i+1}/{len(VARIABLES)}")
-        variables_to_generate = sanitize.variables(current)
+        variables_to_generate = handle_text.sanitize_variables(current)
         prompt_variables['variables_dict'] = variables_to_generate
-        prompt_variables['variables'] = sanitize.text(str(variables_to_generate))
+        prompt_variables['variables'] = handle_text.sanitize(str(variables_to_generate))
         current_variables = generate_variables(prompt_variables)
         all_variables.update(current_variables)
 

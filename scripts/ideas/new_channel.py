@@ -1,6 +1,6 @@
-from scripts.utils import get_prompt, analyze_with_gemini
 import json
 import scripts.database as database
+import scripts.utils.gemini as gemini
 import re
 
 def is_preset_channel_config():
@@ -24,12 +24,12 @@ def new_channel_ideas_prompt(
     }
 
     prompt_file = "preset-channel-idea.txt" if is_preset_channel_config() else "new-channels-ideas.txt"
-    return get_prompt('ideas', prompt_file, variables)
+    return database.build_prompt('ideas', prompt_file, variables)
 
 def run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, model):   
     language = database.get_input_final_language()
     prompt = new_channel_ideas_prompt(insights_p1, insights_p2, insights_p3, language)   
-    channels = analyze_with_gemini(prompt_text=prompt, gemini_model=model)
+    channels = gemini.run(prompt_text=prompt, gemini_model=model)
     
     if not channels:
         print("Failed to generate channels ideas")

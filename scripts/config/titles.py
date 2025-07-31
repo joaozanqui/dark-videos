@@ -1,10 +1,10 @@
-from scripts.utils import get_prompt, analyze_with_gemini
-import scripts.sanitize as sanitize
 import scripts.database as database
+import scripts.utils.handle_text as handle_text
+import scripts.utils.gemini as gemini
 import re
 import json
 
-def build_prompt(
+def build_title_prompt(
     phase1_insights: str,
     phase2_insights: str,
     phase3_insights: str,
@@ -15,18 +15,17 @@ def build_prompt(
     variables = database.get_variables(channel['id'])
 
     other_variables = {
-        "phase1_insights": sanitize.text(phase1_insights),
-        "phase2_insights": sanitize.text(phase2_insights),
-        "phase3_insights": sanitize.text(phase3_insights),
-        "channel": sanitize.text(str(channel)),
-        "json_format_response": sanitize.text(json_format_response),
+        "phase1_insights": handle_text.sanitize(phase1_insights),
+        "phase2_insights": handle_text.sanitize(phase2_insights),
+        "phase3_insights": handle_text.sanitize(phase3_insights),
+        "channel": handle_text.sanitize(str(channel)),
+        "json_format_response": handle_text.sanitize(json_format_response),
         "language": language
     }
 
     variables.update(other_variables)
     
-    template_prompt_file = "default_prompts/script/titles-generation.json"
-    prompt = get_prompt(template_prompt_file, variables)
+    prompt = database.build_prompt('script', 'titles-generation', variables)
     prompt_json = json.loads(prompt)
 
     export_path = f"storage/prompts/{channel['id']}/"
@@ -37,7 +36,7 @@ def build_prompt(
 def run(channel_id):
     file_name = 'titles'
     prompt = database.get_prompt_file(channel_id, file=file_name)
-    title_ideas = analyze_with_gemini(prompt_json=prompt)
+    title_ideas = gemini.run(prompt_json=prompt)
     
     if not title_ideas:
         print("Failed to generate title ideas from Phase 4.")

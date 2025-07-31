@@ -1,6 +1,9 @@
 import json
 import os
-import scripts.sanitize as sanitize
+from string import Template
+import scripts.utils.handle_text as handle_text
+
+ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
 
 def export(file_name: str, data: str|list, format='txt', path='storage/') -> str:
     try:
@@ -72,7 +75,7 @@ def get_variables(channel_id):
     path = f"storage/thought/{str(channel_id)}/variables.json"
     variables = get_json_data(path)
     
-    return sanitize.variables(variables)
+    return handle_text.sanitize_variables(variables)
 
 def get_analysis(analysis_id, phase):
     path = f'storage/analysis/{str(analysis_id)}/insights_p{str(phase)}.txt'
@@ -93,9 +96,26 @@ def get_full_script(channel_id, title_id):
     return full_script
 
 def get_prompt_template(step, file):
-    format = 'txt' if step == 'ideas' else 'json'
+    txt_steps = [
+        'ideas',
+        'analysis'
+    ]
+    
+    format = 'txt' if step in txt_steps else 'json'
     path = f"default_prompts/{str(step)}/{str(file)}.{format}"
     prompt = get_txt_data(path)
+    
+    return prompt
+
+def build_prompt(step, file_name, variables, send_as_json=False):
+    sanitized_variables = handle_text.sanitize_variables(variables)
+    prompt_template = get_prompt_template(step, file_name)
+    template = Template(prompt_template)
+    prompt = template.safe_substitute(sanitized_variables)
+
+    if send_as_json:
+        prompt_json = json.loads(prompt)
+        prompt = json.dumps(prompt_json, indent=2, ensure_ascii=False)
     
     return prompt
 
@@ -169,3 +189,13 @@ def get_input_channel_url():
         return None
 
     return channel_url_or_id
+
+def get_assets_allowed_expressions(channel_id, is_video=False):
+    path = f"assets/expressions/{str(channel_id)}/{'chroma' if is_video else 'transparent'}"
+    allowed_expressions = []
+    for expression in os.listdir(path):
+        full_path = os.path.join(path, expression)
+        if os.path.isfile(full_path):
+            allowed_expressions.append(expression.split('.')[0])
+    
+    return allowed_expressions

@@ -1,8 +1,9 @@
 import whisper
 import re
 import json
-from scripts.utils import get_language_code, get_prompt, analyze_with_gemini, format_json_response, get_allowed_expressions
 import scripts.database as database
+import scripts.utils.handle_text as handle_text
+import scripts.utils.gemini as gemini
 import os
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 import random
@@ -39,7 +40,7 @@ def expressions(channel_id, title_id):
             "text": text.replace("'", "")
         })
 
-    allowed_expressions = get_allowed_expressions(channel_id, is_video=True)
+    allowed_expressions = database.get_assets_allowed_expressions(channel_id, is_video=True)
     variables = {
         "ALLOWED_EXPRESSIONS": allowed_expressions
     }
@@ -52,11 +53,11 @@ def expressions(channel_id, title_id):
             bigest_id = i + max_expressions_per_run
             batch = subtitles_json[i:bigest_id]
             variables['DATA'] = batch
-            prompt = get_prompt('build', 'expressions', variables)
+            prompt = database.build_prompt('build', 'expressions', variables)
             prompt_json = json.loads(prompt)
 
-            response = analyze_with_gemini(prompt_json=prompt_json)
-            all_expressions.extend(format_json_response(response))
+            response = gemini.run(prompt_json=prompt_json)
+            all_expressions.extend(handle_text.format_json_response(response))
             print(f"\t\t\t{bigest_id if bigest_id < subtitles_qty else subtitles_qty}/{subtitles_qty}")
     except Exception as e:
         print(f"\t\t\tError taking expressions: {e}")
@@ -81,7 +82,7 @@ def subtitles(audio_path, channel_id, title_id):
     print("\t\t-Generating subtitles...")
 
     model = whisper.load_model("medium")
-    language_code = get_language_code(language)
+    language_code = handle_text.get_language_code(language)
 
     try:
         result = model.transcribe(

@@ -1,18 +1,17 @@
 from pathlib import Path
 import scripts.database as database
+import scripts.utils.device as device
 from typing import Optional
-from scripts.utils import get_last_downloaded_file
 import shutil
-from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
 import os
 import pyperclip
 import time
 
 def copy_image_to_right_path(final_path: str) -> Optional[Path]:
     try:        
-        last_file = get_last_downloaded_file()
+        last_file = device.get_last_downloaded_file()
         ext = last_file.suffix.lstrip(".")
-        if not ext in ALLOWED_IMAGES_EXTENSIONS:
+        if not ext in database.ALLOWED_IMAGES_EXTENSIONS:
             ext = 'png'
 
         file_name = f"image.{ext}"
@@ -47,14 +46,14 @@ def run(channel_id):
     for video in sorted([p for p in channel_dir.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
         if video.is_dir():
             try:
-                last_file_before_download = get_last_downloaded_file()
-                last_file = get_last_downloaded_file()
+                last_file_before_download = device.get_last_downloaded_file()
+                last_file = device.get_last_downloaded_file()
 
                 final_path = f"storage/thought/{channel_id}/{video.name}"
                 os.makedirs(final_path, exist_ok=True)
                 image_files = [
                     f for f in Path(final_path).iterdir() 
-                    if f.suffix.lstrip(".").lower() in ALLOWED_IMAGES_EXTENSIONS
+                    if f.suffix.lstrip(".").lower() in database.ALLOWED_IMAGES_EXTENSIONS
                 ]
 
                 if image_files:
@@ -67,7 +66,7 @@ def run(channel_id):
 
                 while last_file == last_file_before_download:
                     time.sleep(5)
-                    last_file = get_last_downloaded_file()
+                    last_file = device.get_last_downloaded_file()
                 
                 copied = copy_image_to_right_path(final_path)
                 

@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from scripts.utils import get_prompt
+import scripts.database as database
 
 def generate_phase1_prompt(channel_name: str, channel_description: str, videos_data: List[Dict[str, Any]]) -> str:
 
@@ -19,8 +19,7 @@ def generate_phase1_prompt(channel_name: str, channel_description: str, videos_d
         "data": videos_data
     }
 
-    prompt_file = "scripts/channel_analysis/prompts/phase1-channel-analysis.txt"
-    return get_prompt(prompt_file, variables)
+    return database.build_prompt('analysis', 'phase1-channel-analysis', variables)
 
 
 def generate_phase2_prompt(comments_text: str) -> str:
@@ -28,8 +27,7 @@ def generate_phase2_prompt(comments_text: str) -> str:
         "comments_text": comments_text
     }
 
-    prompt_file = "scripts/channel_analysis/prompts/phase2-comments-analysis.txt"
-    return get_prompt(prompt_file, variables)
+    return database.build_prompt('analysis', 'phase2-comments-analysis', variables)
     
 def generate_phase3_prompt(transcript_text: str, video_title: str) -> str:
     variables = {
@@ -37,8 +35,7 @@ def generate_phase3_prompt(transcript_text: str, video_title: str) -> str:
         "video_title": video_title
     }
 
-    prompt_file = "scripts/channel_analysis/prompts/phase3-transcripts-analysis.txt"
-    return get_prompt(prompt_file, variables)
+    return database.build_prompt('analysis', 'phase3-transcripts-analysis', variables)
 
 def generate_phase3_merge_prompt(analysis: str, videos_qty: int, channel_name: str) -> str:
     variables = {
@@ -47,5 +44,4 @@ def generate_phase3_merge_prompt(analysis: str, videos_qty: int, channel_name: s
         "channel_name": channel_name
     }
 
-    prompt_file = "scripts/channel_analysis/prompts/phase3-merge-prompts.txt"
-    return get_prompt(prompt_file, variables)
+    return database.build_prompt('analysis', 'phase3-merge-prompts', variables)

@@ -1,7 +1,6 @@
 from PIL import ImageFont, ImageDraw, Image
 import textwrap
 import os 
-from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
 import scripts.database as database
 
 FONT_PATH = "assets/font.ttf"
@@ -76,7 +75,7 @@ def draw_thumbnail(background: Image.Image, expression: str, wrapped_text: str, 
 
 def has_image_file(default_path):
     image_path = ''
-    for ext in ALLOWED_IMAGES_EXTENSIONS:
+    for ext in database.ALLOWED_IMAGES_EXTENSIONS:
         image_path = f"{default_path}/image.{ext}"
         has_image = os.path.exists(image_path)
         if has_image:

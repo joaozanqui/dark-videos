@@ -2,7 +2,7 @@ import pyautogui as gui
 import pyperclip
 import time
 from scripts.audios.browsing import goto_page, goto_top_of_page, open_browser
-from scripts.utils import get_last_downloaded_file
+import scripts.utils.device as device
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -42,7 +42,7 @@ def generate():
 
 def save_audio_downloaded(file_name: str = 'audio', path: str = 'storage/audios') -> Optional[Path]:
     try:
-        last_file = get_last_downloaded_file()
+        last_file = device.get_last_downloaded_file()
         file_name = file_name + '.mp3'
 
         full_path = Path.cwd() / path
@@ -69,8 +69,8 @@ def download_audio():
 
 
 def run(text):
-    last_file_before_download = get_last_downloaded_file()
-    last_file = get_last_downloaded_file()
+    last_file_before_download = device.get_last_downloaded_file()
+    last_file = device.get_last_downloaded_file()
     fill_text(text)
     generate()
     while last_file_before_download == last_file:
@@ -78,6 +78,6 @@ def run(text):
         time.sleep(10)
         gui.hotkey('enter')
         time.sleep(1)
-        last_file = get_last_downloaded_file()
+        last_file = device.get_last_downloaded_file()
 
     return last_file

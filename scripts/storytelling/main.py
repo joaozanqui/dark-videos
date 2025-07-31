@@ -1,23 +1,22 @@
-from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response, build_template, get_allowed_expressions
 import scripts.database as database
-import scripts.sanitize as sanitize
+import scripts.utils.gemini as gemini
+import scripts.utils.handle_text as handle_text
 import scripts.storytelling.generate_script as generate_script
 from string import Template
 import json
-import scripts.database as database
 import os
 
 def get_response(variables, prompt_template, agent):
     prompt_str = prompt_template.safe_substitute(variables)
     prompt = json.loads(prompt_str)
-    response = analyze_with_gemini(prompt_json=prompt, gemini_model=agent)  
+    response = gemini.run(prompt_json=prompt, gemini_model=agent)  
 
     return response
 
 def get_topics(variables, topics_template_prompt, topics_agent):
     topics_str = get_response(variables, topics_template_prompt, topics_agent)
     try:
-        return format_json_response(topics_str)
+        return handle_text.format_json_response(topics_str)
     except Exception as e:
         print(f"\t\t-Error to get topics: Invalid Format")
         return get_topics(variables, topics_template_prompt, topics_agent)
@@ -30,38 +29,38 @@ def set_thumbnail_data(variables, channel_id, title_id):
     has_thumbnail_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
 
     infos_variables = {
-        "VIDEO_TITLE": sanitize.text(variables['VIDEO_TITLE']),
-        "RATIONALE": sanitize.text(variables['RATIONALE']),
-        "FULL_SCRIPT": sanitize.text(database.get_full_script(channel_id, title_id)),
-        "LANGUAGE": sanitize.text(variables['LANGUAGE_AND_REGION']),
-        "TOPICS": sanitize.text(str(variables['TOPICS']))
+        "VIDEO_TITLE": handle_text.sanitize(variables['VIDEO_TITLE']),
+        "RATIONALE": handle_text.sanitize(variables['RATIONALE']),
+        "FULL_SCRIPT": handle_text.sanitize(database.get_full_script(channel_id, title_id)),
+        "LANGUAGE": handle_text.sanitize(variables['LANGUAGE_AND_REGION']),
+        "TOPICS": handle_text.sanitize(str(variables['TOPICS']))
     }
 
     if not has_description:
         print(f"\t\t - Video Description...")
-        prompt = build_template(infos_variables, step='build',file_name="video_description")
-        description = analyze_with_gemini(prompt_json=prompt)
+        prompt = database.build_prompt('build', 'video_description', infos_variables, send_as_json=True)   
+        description = gemini.run(prompt_json=prompt)
         database.export("description", description, path=video_path)
     else:
         description = database.get_video_description(channel_id, title_id)
 
     if not has_thumbnail_data:
         print(f"\t\t - Thumbnail Data...")
-        infos_variables['DESCRIPTION'] = sanitize.text(description)
-        infos_variables['ALLOWED_EXPRESSIONS'] = get_allowed_expressions(channel_id)
-        prompt = build_template(infos_variables, step='build',file_name="thumbnail_data")
-        thumbnail_data_text = analyze_with_gemini(prompt_json=prompt)
-        thumbnail_data = format_json_response(thumbnail_data_text)                
+        infos_variables['DESCRIPTION'] = handle_text.sanitize(description)
+        infos_variables['ALLOWED_EXPRESSIONS'] = database.get_assets_allowed_expressions(channel_id)
+        prompt = database.build_prompt('build', 'thumbnail_data', infos_variables, send_as_json=True)   
+        thumbnail_data_text = gemini.run(prompt_json=prompt)
+        thumbnail_data = handle_text.format_json_response(thumbnail_data_text)                
         database.export("thumbnail_data", thumbnail_data, format='json', path=video_path)
     else:
         thumbnail_data = database.get_thumbnail_data(channel_id, title_id)
 
     if not has_thumbnail_prompt:
         print(f"\t\t - Thumbnail prompt...")
-        infos_variables['THUMBNAIL_PHRASE'] = sanitize.text(thumbnail_data['phrase'])
-        infos_variables['THUMBNAIL_EXPRESSION'] = sanitize.text(thumbnail_data['expression'])
-        prompt = build_template(infos_variables, step='build',file_name="thumbnail")
-        thumbnail_prompt = analyze_with_gemini(prompt_json=prompt)
+        infos_variables['THUMBNAIL_PHRASE'] = handle_text.sanitize(thumbnail_data['phrase'])
+        infos_variables['THUMBNAIL_EXPRESSION'] = handle_text.sanitize(thumbnail_data['expression'])
+        prompt = database.build_prompt('build', 'thumbnail', infos_variables, send_as_json=True)   
+        thumbnail_prompt = gemini.run(prompt_json=prompt)
         database.export("thumbnail_prompt", thumbnail_prompt, path=video_path)
     else:
         thumbnail_prompt = database.get_thumbnail_prompt(channel_id, title_id)
@@ -83,8 +82,8 @@ def run(channel_id):
     if not variables or not topics_agent_prompt or not script_agent_prompt or not topics_template_prompt or not script_template_prompt:
         return []
     
-    topics_agent = get_gemini_model(agent_instructions=topics_agent_prompt)
-    script_agent = get_gemini_model(agent_instructions=script_agent_prompt)
+    topics_agent = gemini.get_model(agent_instructions=topics_agent_prompt)
+    script_agent = gemini.get_model(agent_instructions=script_agent_prompt)
     
     for title_id, title in enumerate(titles):
         video_path = f"storage/thought/{channel_id}/{title_id}"

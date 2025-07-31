@@ -1,6 +1,6 @@
 
 import scripts.ideas.new_channel as new_channel 
-from scripts.utils import get_gemini_model, analyze_with_gemini
+import scripts.utils.gemini as gemini
 from string import Template
 import os
 import scripts.database as database
@@ -21,7 +21,7 @@ def build_prompt_template(channel, insights_p1, insights_p2, step):
 
 def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
     prompt = build_prompt_template(channel, insights_p1, insights_p2, step)
-    response = analyze_with_gemini(prompt_text=prompt, gemini_model=model)
+    response = gemini.run(prompt_text=prompt, gemini_model=model)
     
     if not response:
         return None
@@ -29,7 +29,7 @@ def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
     return response
 
 def run(insights_p1, insights_p2, insights_p3, analysis_id):
-    gemini_model = get_gemini_model()
+    gemini_model = gemini.get_model()
 
     if insights_p1 and insights_p2 and insights_p3:
         print("\n--- Generating Viral Channel and Videos Ideas (using Gemini) ---")

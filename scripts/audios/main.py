@@ -1,8 +1,8 @@
 import scripts.database as database
 import scripts.audios.capcut as capcut
-from scripts.utils import get_last_downloaded_file
 import pyperclip
 from typing import List, Optional
+import scripts.utils.device as device
 from pydub import AudioSegment
 from pathlib import Path
 import os
@@ -107,7 +107,7 @@ def run(channel_id) -> Optional[Path]:
                             else:
                                 pyperclip.copy(text)
                                 input("--> Copy the text, generate the audio and save it at 'Downloads' folder.\n--> Press 'Enter' when the audio is in 'Downloads' dir")
-                                audio_file = get_last_downloaded_file()
+                                audio_file = device.get_last_downloaded_file()
                                 
                             audio = copy_audio_to_right_path(f"{i+1}", final_path, audio_file)
                             if not audio:

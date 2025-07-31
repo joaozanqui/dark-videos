@@ -13,11 +13,7 @@ from scripts.channel_analysis.gemini_analyzer import (
     generate_phase3_merge_prompt,
 )
 
-from scripts.utils import (
-    get_gemini_model,
-    analyze_with_gemini,
-)
-
+import scripts.utils.gemini as gemini
 import scripts.database as database
 
 def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path):
@@ -28,11 +24,11 @@ def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path)
     for video in videos:
         transcripts = get_transcripts(video['video_id'])
         prompt_p3 = generate_phase3_prompt(transcripts, video['title'])
-        analysis += analyze_with_gemini(prompt_text=prompt_p3, gemini_model=model)
+        analysis += gemini.run(prompt_text=prompt_p3, gemini_model=model)
         analysis += "\n"
     
     prompt_p3 = generate_phase3_merge_prompt(analysis, most_viewed_videos_qty, channel_name)
-    insights_p3 = analyze_with_gemini(prompt_text=prompt_p3, gemini_model=model)
+    insights_p3 = gemini.run(prompt_text=prompt_p3, gemini_model=model)
     
     if not insights_p3:
         print("Failed to get insights from Phase 3.")
@@ -58,7 +54,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
         comments_text += "\n"    
         
     prompt_p2 = generate_phase2_prompt(comments_text)
-    insights_p2 = analyze_with_gemini(prompt_text=prompt_p2, gemini_model=model)
+    insights_p2 = gemini.run(prompt_text=prompt_p2, gemini_model=model)
     
     if not insights_p2:
         print("Failed to get insights from Phase 2.")
@@ -71,7 +67,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
     
 def channel_analysis(channel_name, channel_description, videos_list, model, analysis_path):    
     prompt_p1 = generate_phase1_prompt(channel_name, channel_description, videos_list)
-    insights_p1 = analyze_with_gemini(prompt_text=prompt_p1, gemini_model=model)
+    insights_p1 = gemini.run(prompt_text=prompt_p1, gemini_model=model)
     
     if not insights_p1:
         print("Failed to get insights from Phase 1.")
@@ -115,7 +111,7 @@ def get_next_analysis():
     return [next_analysis_id, analysis_path]
 
 def run_full_analysis_pipeline():
-    gemini_model = get_gemini_model()
+    gemini_model = gemini.get_model()
     analysis_id, analysis_path = get_next_analysis()
     
     print("\n--- Step 1: Fetching YouTube Channel Data ---")

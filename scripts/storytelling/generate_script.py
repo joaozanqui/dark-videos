@@ -1,12 +1,11 @@
 import re
 import unicodedata
 import langid
-from scripts.utils import build_template, get_language_code
 import scripts.database as database
-import scripts.sanitize as sanitize
+import scripts.utils.handle_text as handle_text
 
 def is_language_right(text, language):
-    language_code = get_language_code(language)
+    language_code = handle_text.get_language_code(language)
     lang, _ = langid.classify(text)
     if lang != language_code:
         print(f"\t\t -Wrong language ({lang}), it must be {language}")
@@ -54,11 +53,11 @@ def save_topics_variables(topics, video_duration):
 
     variables = {
         "INTRODUCTION_TITLE": introduction['title'],
-        "INTRODUCTION_BULLET_POINTS": "; ".join(f"{sanitize.text(point)}" for point in introduction_bullet_points),
+        "INTRODUCTION_BULLET_POINTS": "; ".join(f"{handle_text.sanitize(point)}" for point in introduction_bullet_points),
         "DEVELOPMENTS": developments,
         "DEVELOPMENT_QTY": len(developments),
         "CONCLUSION_TITLE": conclusion['title'],
-        "CONCLUSION_BULLET_POINTS": "; ".join(f"- {sanitize.text(point)}" for point in conclusion_bullet_points),
+        "CONCLUSION_BULLET_POINTS": "; ".join(f"- {handle_text.sanitize(point)}" for point in conclusion_bullet_points),
         "INTRODUCTION_DURATION": introduction_and_conclusion_duration / 2,
         "DEVELOPMENT_DURATION": development_duration,
         "CONCLUSION_DURATION": introduction_and_conclusion_duration / 2
@@ -73,7 +72,7 @@ def run(variables, agent, channel_n, title_n, video_title, script_template_promp
     chat_history = agent.start_chat(history=[])
     script_structure_prompt = script_template_prompt.safe_substitute(variables)
     chat = chat_history.send_message(script_structure_prompt)
-    introduction_prompt = build_template(variables, step='script', file_name='script_introduction')   
+    introduction_prompt = database.build_prompt('script', 'script_introduction', variables, send_as_json=True)   
     chat = chat_history.send_message(introduction_prompt)
     introducion = chat.text
 
@@ -84,14 +83,14 @@ def run(variables, agent, channel_n, title_n, video_title, script_template_promp
     
     for i, development_topic in enumerate(variables['DEVELOPMENTS']):
         variables['DEVELOPMENT_CHAPTER_NUMBER'] = i + 1
-        variables['DEVELOPMENT_TITLE'] = sanitize.text(development_topic['title'])
-        variables['DEVELOPMENT_SUBTOPIC_1'] = sanitize.text(development_topic['subtopic_1'])
-        variables['DEVELOPMENT_SUBTOPIC_2'] = sanitize.text(development_topic['subtopic_2'])
-        variables['DEVELOPMENT_SUBTOPIC_3'] = sanitize.text(development_topic['subtopic_3'])
-        variables['DEVELOPMENT_SUBTOPIC_4'] = sanitize.text(development_topic['subtopic_4'])
-        variables['DEVELOPMENT_SUBTOPIC_5'] = sanitize.text(development_topic['subtopic_5'])
+        variables['DEVELOPMENT_TITLE'] = handle_text.sanitize(development_topic['title'])
+        variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topic['subtopic_1'])
+        variables['DEVELOPMENT_SUBTOPIC_2'] = handle_text.sanitize(development_topic['subtopic_2'])
+        variables['DEVELOPMENT_SUBTOPIC_3'] = handle_text.sanitize(development_topic['subtopic_3'])
+        variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topic['subtopic_4'])
+        variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topic['subtopic_5'])
 
-        prompt = build_template(variables, step='script', file_name='script_go_next_development')
+        prompt = database.build_prompt('script', 'script_go_next_development', variables, send_as_json=True)   
         chat = chat_history.send_message(prompt)
         full_script += chat.text
 
@@ -99,7 +98,7 @@ def run(variables, agent, channel_n, title_n, video_title, script_template_promp
             attempt += 1
             return run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
     
-    prompt = build_template(variables, step='script', file_name='script_conclusion')
+    prompt = database.build_prompt('script', 'script_conclusion', variables, send_as_json=True)   
     chat = chat_history.send_message(prompt)
     full_script += chat.text
 

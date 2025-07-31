@@ -107,7 +107,7 @@ def run_process():
                 handle_variables.run(channel, insights_p1, insights_p2, insights_p3)
             else:
                 if action == 4:
-                    titles.build_prompt(insights_p1, insights_p2, insights_p3, channel)
+                    titles.build_title_prompt(insights_p1, insights_p2, insights_p3, channel)
                 if action == 5:
                     titles.run(channel['id'])
                 elif action == 6:
