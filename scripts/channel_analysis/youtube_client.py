@@ -2,10 +2,11 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from googleapiclient.discovery import Resource
 from googleapiclient.errors import HttpError
-from scripts.channel_analysis.utils import get_youtube_service
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 import xml.etree.ElementTree as ET
+from config.config import GOOGLE_API_KEY
+from googleapiclient.discovery import build, Resource  
 
 def get_channel_id_from_url(youtube: Resource, channel_url: str) -> Optional[str]:
     if "/channel/" in channel_url:
@@ -141,6 +142,13 @@ def get_videos_from_playlist(
     videos_basic_info.sort(key=lambda v: v["PublishedAt"], reverse=True)
 
     return videos_basic_info
+
+def get_youtube_service() -> Optional[Resource]:
+    try:
+        return build("youtube", "v3", developerKey=GOOGLE_API_KEY)
+    except Exception as e:
+        print(f"Error building YouTube service: {e}")
+        return None
 
 def get_youtube_channel_data(
     channel_url: str,
