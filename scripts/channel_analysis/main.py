@@ -1,9 +1,5 @@
 import os
 
-from scripts.channel_analysis.utils import (
-    get_youtube_channel_url
-)
-
 from scripts.channel_analysis.youtube_client import (
     get_youtube_channel_data, 
     fetch_top_liked_comments,
@@ -20,8 +16,9 @@ from scripts.channel_analysis.gemini_analyzer import (
 from scripts.utils import (
     get_gemini_model,
     analyze_with_gemini,
-    export
 )
+
+import scripts.database as database
 
 def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path):
     most_viewed_videos_qty = 20
@@ -41,7 +38,7 @@ def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path)
         print("Failed to get insights from Phase 3.")
         return None
     
-    insights_p3_path = export('insights_p3', insights_p3, path=analysis_path)
+    insights_p3_path = database.export('insights_p3', insights_p3, path=analysis_path)
     print(f"Insights of Phase 3 (Transcripts Analysis) saved at {insights_p3_path}")
     
     return insights_p3
@@ -67,7 +64,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
         print("Failed to get insights from Phase 2.")
         return None
     
-    insights_p2_path = export('insights_p2', insights_p2, path=analysis_path)
+    insights_p2_path = database.export('insights_p2', insights_p2, path=analysis_path)
     print(f"Insights of Phase 2 (Comments Analysis) saved at {insights_p2_path}")
     
     return insights_p2
@@ -80,7 +77,7 @@ def channel_analysis(channel_name, channel_description, videos_list, model, anal
         print("Failed to get insights from Phase 1.")
         return None
     
-    insights_p1_path = export('insights_p1', insights_p1, path=analysis_path)
+    insights_p1_path = database.export('insights_p1', insights_p1, path=analysis_path)
     print(f"Insights of Phase 1 (Video Data Analysis) saved at {insights_p1_path}")
     return insights_p1
 
@@ -122,7 +119,7 @@ def run_full_analysis_pipeline():
     analysis_id, analysis_path = get_next_analysis()
     
     print("\n--- Step 1: Fetching YouTube Channel Data ---")
-    channel_url = get_youtube_channel_url()
+    channel_url = database.get_input_channel_url()
     youtube_data = get_channel_data(channel_url)
     channel_name, channel_description, videos_list = youtube_data
     most_viewed_videos = sorted(videos_list, key=lambda x: x["viewCount"], reverse=True)

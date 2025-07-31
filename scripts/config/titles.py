@@ -1,6 +1,7 @@
-from scripts.utils import get_prompt, export, analyze_with_gemini, get_final_language, sanitize_text
+from scripts.utils import get_prompt, analyze_with_gemini
+import scripts.sanitize as sanitize
+import scripts.database as database
 import re
-import os
 import json
 
 def build_prompt(
@@ -8,17 +9,17 @@ def build_prompt(
     phase2_insights: str,
     phase3_insights: str,
     channel: dict,
-    variables: dict
 ) -> str:
-    language = get_final_language()
+    language = database.get_input_final_language()
     json_format_response = f'''[{{"title": "title in {language}", "rationale": "explanation text"}}]'''
+    variables = database.get_variables(channel['id'])
 
     other_variables = {
-        "phase1_insights": sanitize_text(phase1_insights),
-        "phase2_insights": sanitize_text(phase2_insights),
-        "phase3_insights": sanitize_text(phase3_insights),
-        "channel": sanitize_text(str(channel)),
-        "json_format_response": sanitize_text(json_format_response),
+        "phase1_insights": sanitize.text(phase1_insights),
+        "phase2_insights": sanitize.text(phase2_insights),
+        "phase3_insights": sanitize.text(phase3_insights),
+        "channel": sanitize.text(str(channel)),
+        "json_format_response": sanitize.text(json_format_response),
         "language": language
     }
 
@@ -29,18 +30,13 @@ def build_prompt(
     prompt_json = json.loads(prompt)
 
     export_path = f"storage/prompts/{channel['id']}/"
-    export('titles', prompt_json, format='json',path=export_path)
+    database.export('titles', prompt_json, format='json',path=export_path)
 
     return prompt
 
 def run(channel_id):
-    prompt_file = f"storage/prompts/{channel_id}/titles.json"
-    if os.path.exists(prompt_file):
-        with open(prompt_file, "r", encoding="utf-8") as file:
-            prompt = file.read() 
-    else:
-        return []
-    
+    file_name = 'titles'
+    prompt = database.get_prompt_file(channel_id, file=file_name)
     title_ideas = analyze_with_gemini(prompt_json=prompt)
     
     if not title_ideas:
@@ -56,7 +52,7 @@ def run(channel_id):
 
     print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
 
-    title_ideas_path = export(f"{channel_id}", titles_json, format='json',path='storage/ideas/titles/')
+    title_ideas_path = database.export(f"{channel_id}", titles_json, format='json',path='storage/ideas/titles/')
     print(f"Title Ideas saved at {title_ideas_path}")
     
     return titles_json

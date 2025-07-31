@@ -1,10 +1,11 @@
-from scripts.utils import get_gemini_model, analyze_with_gemini, export, format_json_response, get_variables, sanitize_text
-from scripts.storytelling.utils import build_template
-import scripts.storytelling.generate_script as generate_script 
+from scripts.utils import get_gemini_model, analyze_with_gemini, format_json_response, build_template, get_allowed_expressions
+import scripts.database as database
+import scripts.sanitize as sanitize
+import scripts.storytelling.generate_script as generate_script
 from string import Template
 import json
+import scripts.database as database
 import os
-import ast
 
 def get_response(variables, prompt_template, agent):
     prompt_str = prompt_template.safe_substitute(variables)
@@ -20,33 +21,63 @@ def get_topics(variables, topics_template_prompt, topics_agent):
     except Exception as e:
         print(f"\t\t-Error to get topics: Invalid Format")
         return get_topics(variables, topics_template_prompt, topics_agent)
-
-def get_prompt(channel_id, step, file):
-    path = f"storage/prompts/{channel_id}/{step}/{file}.json"
-
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            prompt = f.read()     
-        return prompt
     
-    return ''
+
+def set_thumbnail_data(variables, channel_id, title_id):
+    video_path = f"storage/thought/{channel_id}/{title_id}/"
+    has_description = os.path.exists(f"{video_path}description.txt")
+    has_thumbnail_data = os.path.exists(f"{video_path}thumbnail_data.json")  
+    has_thumbnail_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
+
+    infos_variables = {
+        "VIDEO_TITLE": sanitize.text(variables['VIDEO_TITLE']),
+        "RATIONALE": sanitize.text(variables['RATIONALE']),
+        "FULL_SCRIPT": sanitize.text(database.get_full_script(channel_id, title_id)),
+        "LANGUAGE": sanitize.text(variables['LANGUAGE_AND_REGION']),
+        "TOPICS": sanitize.text(str(variables['TOPICS']))
+    }
+
+    if not has_description:
+        print(f"\t\t - Video Description...")
+        prompt = build_template(infos_variables, step='build',file_name="video_description")
+        description = analyze_with_gemini(prompt_json=prompt)
+        database.export("description", description, path=video_path)
+    else:
+        description = database.get_video_description(channel_id, title_id)
+
+    if not has_thumbnail_data:
+        print(f"\t\t - Thumbnail Data...")
+        infos_variables['DESCRIPTION'] = sanitize.text(description)
+        infos_variables['ALLOWED_EXPRESSIONS'] = get_allowed_expressions(channel_id)
+        prompt = build_template(infos_variables, step='build',file_name="thumbnail_data")
+        thumbnail_data_text = analyze_with_gemini(prompt_json=prompt)
+        thumbnail_data = format_json_response(thumbnail_data_text)                
+        database.export("thumbnail_data", thumbnail_data, format='json', path=video_path)
+    else:
+        thumbnail_data = database.get_thumbnail_data(channel_id, title_id)
+
+    if not has_thumbnail_prompt:
+        print(f"\t\t - Thumbnail prompt...")
+        infos_variables['THUMBNAIL_PHRASE'] = sanitize.text(thumbnail_data['phrase'])
+        infos_variables['THUMBNAIL_EXPRESSION'] = sanitize.text(thumbnail_data['expression'])
+        prompt = build_template(infos_variables, step='build',file_name="thumbnail")
+        thumbnail_prompt = analyze_with_gemini(prompt_json=prompt)
+        database.export("thumbnail_prompt", thumbnail_prompt, path=video_path)
+    else:
+        thumbnail_prompt = database.get_thumbnail_prompt(channel_id, title_id)
 
 def run(channel_id):
-    with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
-        channels = json.load(file)    
+    channel = database.get_channel_by_id(channel_id)
 
-    channel = channels[int(channel_id)-1]
-    
     print(f"- {channel['name']}")
-    with open(f"storage/ideas/titles/{channel_id}.json", "r", encoding="utf-8") as file:
-        titles = json.load(file)
+    titles = database.get_titles(channel_id)
 
-    variables = get_variables(channel_id)
-    topics_agent_prompt = get_prompt(channel_id, step='agents',file='topics')
-    script_agent_prompt = get_prompt(channel_id, step='agents',file='script')
-    topics_prompt = get_prompt(channel_id, step='script',file='topics')
+    variables = database.get_variables(channel_id)
+    topics_agent_prompt = database.get_prompt_file(channel_id, step='agents',file='topics')
+    script_agent_prompt = database.get_prompt_file(channel_id, step='agents',file='script')
+    topics_prompt = database.get_prompt_file(channel_id, step='script',file='topics')
     topics_template_prompt = Template(str(topics_prompt))
-    script_prompt = get_prompt(channel_id, step='script',file='script')
+    script_prompt = database.get_prompt_file(channel_id, step='script',file='script')
     script_template_prompt = Template(str(script_prompt))
 
     if not variables or not topics_agent_prompt or not script_agent_prompt or not topics_template_prompt or not script_template_prompt:
@@ -56,14 +87,11 @@ def run(channel_id):
     script_agent = get_gemini_model(agent_instructions=script_agent_prompt)
     
     for title_id, title in enumerate(titles):
-        video_path = f"storage/thought/{channel_id}/{title_id}/"
+        video_path = f"storage/thought/{channel_id}/{title_id}"
         
-        has_topics = os.path.exists(f"{video_path}topics.json") or os.path.exists(f"{video_path}topics.txt")
-        has_full_script = os.path.exists(f"{video_path}full_script.txt")
-        has_thumbnail_prompt = os.path.exists(f"{video_path}thumbnail_prompt.txt")  
-        has_thumbnail_data = os.path.exists(f"{video_path}thumbnail_data.json")  
-        has_description = os.path.exists(f"{video_path}description.txt")
-        has_all_files = has_topics and  has_full_script and has_thumbnail_prompt and has_description and has_thumbnail_data
+        has_topics = os.path.exists(f"{video_path}/topics.json") or os.path.exists(f"{video_path}/topics.txt")
+        has_full_script = os.path.exists(f"{video_path}/full_script.txt")
+        has_all_files = has_topics and  has_full_script
         
         if has_all_files:
             continue
@@ -77,59 +105,20 @@ def run(channel_id):
             variables['TOPICS'] = get_topics(variables, topics_template_prompt, topics_agent)
             if not variables['TOPICS']:
                 return run(channel_id)
-            export('topics', variables['TOPICS'], format='json', path=f"{video_path}")
+            database.export('topics', variables['TOPICS'], format='json', path=f"{video_path}/")
             if isinstance(variables['TOPICS'], list):
                 variables['TOPICS'] = variables['TOPICS'][0]
         else:
-            with open(f"{video_path}topics.json", "r", encoding="utf-8") as file:
-                variables['TOPICS'] = json.load(file) 
+            variables['TOPICS'] = database.get_topics(channel_id, title_id)
 
         if not has_full_script:
             print(f"\t\t - Full script...")
             full_script = generate_script.run(variables, script_agent, channel_id, title_id, title['title'], script_template_prompt)
         else:
-            with open(f"{video_path}full_script.txt", "r", encoding="utf-8") as file:
-                full_script = file.read()
-
+            full_script = database.get_full_script(channel_id, title_id)
+        
         if full_script:
-            infos_variables = {
-                "VIDEO_TITLE": sanitize_text(variables['VIDEO_TITLE']),
-                "RATIONALE": sanitize_text(variables['RATIONALE']),
-                "FULL_SCRIPT": sanitize_text(full_script),
-                "LANGUAGE": sanitize_text(variables['LANGUAGE_AND_REGION']),
-                "TOPICS": sanitize_text(str(variables['TOPICS']))
-            }
-
-            if not has_description:
-                print(f"\t\t - Description...")
-                prompt = build_template(infos_variables, step='build',file_name="video_description")
-                description = analyze_with_gemini(prompt_json=prompt)
-                export("description", description, path=video_path)
-            else:
-                with open(f"{video_path}description.txt", "r", encoding="utf-8") as file:
-                    description = file.read()  
-
-            if not has_thumbnail_data:
-                print(f"\t\t - Thumbnail Data...")
-                infos_variables['DESCRIPTION'] = sanitize_text(description)
-                prompt = build_template(infos_variables, step='build',file_name="thumbnail_data")
-                thumbnail_data_text = analyze_with_gemini(prompt_json=prompt)
-                thumbnail_data = format_json_response(thumbnail_data_text)                
-                export("thumbnail_data", thumbnail_data, format='json', path=video_path)
-            else:
-                with open(f"{video_path}thumbnail_data.json", "r", encoding="utf-8") as file:
-                    thumbnail_data = json.load(file)
-
-            if not has_thumbnail_prompt:
-                print(f"\t\t - Thumbn'ail prompt...")
-                infos_variables['THUMBNAIL_PHRASE'] = sanitize_text(thumbnail_data['phrase'])
-                infos_variables['THUMBNAIL_EXPRESSION'] = sanitize_text(thumbnail_data['expression'])
-                prompt = build_template(infos_variables, step='build',file_name="thumbnail")
-                thumbnail_prompt = analyze_with_gemini(prompt_json=prompt)
-                export("thumbnail_pro'mpt", thumbnail_prompt, path=video_path)
-            else:
-                with open(f"{video_path}thumbnail_prompt.txt", "r", encoding="utf-8") as file:
-                    thumbnail_prompt = file.read()  
-
-            print(f"\t\t - Done!")
+            set_thumbnail_data(variables, channel_id, title_id)
+    
+        print(f"\t\t - Done!")
     return

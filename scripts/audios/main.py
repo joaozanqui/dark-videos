@@ -1,11 +1,10 @@
-# import scripts.audios.browsing as browsing
+import scripts.database as database
 import scripts.audios.capcut as capcut
 from scripts.utils import get_last_downloaded_file
 import pyperclip
 from typing import List, Optional
 from pydub import AudioSegment
 from pathlib import Path
-import json
 import os
 import shutil
 
@@ -70,10 +69,7 @@ def run(channel_id) -> Optional[Path]:
     # https://www.capcut.com/magic-tools/text-to-speech
     automatic_download = True
     path = Path("storage/thought")
-    channels_path = "storage/ideas/channels.json"
-
-    with open(channels_path, "r", encoding="utf-8") as file:
-        channels = json.load(file)
+    channels = database.get_channels()
 
     if not path.is_dir():
         print(f"Error: No video generated.")

@@ -1,5 +1,5 @@
 from pathlib import Path
-import json
+import scripts.database as database
 from typing import Optional
 from scripts.utils import get_last_downloaded_file
 import shutil
@@ -35,10 +35,7 @@ def copy_image_to_right_path(final_path: str) -> Optional[Path]:
 def run(channel_id):
     # https://www.freepik.com/pikaso/ai-image-generator
     root = Path("storage/thought")
-    channels_path = "storage/ideas/channels.json"
-
-    with open(channels_path, "r", encoding="utf-8") as file:
-        channels = json.load(file)
+    channels = database.get_channels()
 
     if not root.is_dir():
         print(f"Error: No video generated.")

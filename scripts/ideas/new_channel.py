@@ -1,10 +1,14 @@
-from scripts.utils import get_prompt, analyze_with_gemini, get_final_language
+from scripts.utils import get_prompt, analyze_with_gemini
 import json
+import scripts.database as database
 import re
 
 def is_preset_channel_config():
     yes_or_no = input("Is there a channel idea preset?\n1 -> Yes\n2 -> No\n ->")
-    return yes_or_no
+    while yes_or_no != '1' and yes_or_no != '2':
+        yes_or_no = input("Please select a valid option\n ->")
+    
+    return True if int(yes_or_no) == 1 else False 
 
 def new_channel_ideas_prompt(
     phase1_insights: str,
@@ -20,12 +24,10 @@ def new_channel_ideas_prompt(
     }
 
     prompt_file = "preset-channel-idea.txt" if is_preset_channel_config() else "new-channels-ideas.txt"
-
-    prompt_path = f"scripts/ideas/prompts/{prompt_file}"
-    return get_prompt(prompt_path, variables)
+    return get_prompt('ideas', prompt_file, variables)
 
 def run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, model):   
-    language = get_final_language()
+    language = database.get_input_final_language()
     prompt = new_channel_ideas_prompt(insights_p1, insights_p2, insights_p3, language)   
     channels = analyze_with_gemini(prompt_text=prompt, gemini_model=model)
     

@@ -1,32 +1,28 @@
 import whisper
-from scripts.storytelling.utils import build_template
 import re
-from pathlib import Path
 import json
-from scripts.utils import get_final_language, get_language_code, export, get_prompt, analyze_with_gemini, format_json_response
+from scripts.utils import get_language_code, get_prompt, analyze_with_gemini, format_json_response, get_allowed_expressions
+import scripts.database as database
 import os
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 import random
 
-def expressions(subtitles_path, output_path):
-    os.makedirs(output_path, exist_ok=True)
+def expressions(channel_id, title_id):
+    output_path = f"storage/thought/{channel_id}/{title_id}"
     expressions_file = f"{output_path}/expressions.json"
     
     if os.path.exists(expressions_file):
-        with open(expressions_file, "r", encoding="utf-8") as file:
-            all_expressions = json.load(file)
-        
-        return all_expressions 
+        return database.get_expressions(channel_id, title_id)
     
     print("\t\t-Taking expressions...")
-    with open(subtitles_path, "r", encoding="utf-8") as file:
-        subtitles_srt = file.read()
+    subtitles_srt = database.get_subtitles(channel_id, title_id)
+
     pattern = re.compile(
-        r"(\d+)\s*\n"
-        r"(\d{2}:\d{2}:\d{2},\d{3})\s-->\s"
-        r"(\d{2}:\d{2}:\d{2},\d{3})\s*\n"
-        r"((?:.+\n?)+?)"
-        r"(?=\n\d+\n|\s*\Z)"
+        r'(\d+)\s*\n'
+        r'(\d{2}:\d{2}:\d{2},\d{3})\s-->\s'
+        r'(\d{2}:\d{2}:\d{2},\d{3})\s*\n'
+        r'(.*?)(?=\n{2,}|\Z)',
+        re.DOTALL
     )
 
     subtitles_json = []
@@ -43,8 +39,11 @@ def expressions(subtitles_path, output_path):
             "text": text.replace("'", "")
         })
 
-    default_prompt_path = 'default_prompts/build/expressions.json'
-    
+    allowed_expressions = get_allowed_expressions(channel_id, is_video=True)
+    variables = {
+        "ALLOWED_EXPRESSIONS": allowed_expressions
+    }
+
     all_expressions = []
     max_expressions_per_run = 100
     subtitles_qty = len(subtitles_json)
@@ -52,7 +51,8 @@ def expressions(subtitles_path, output_path):
         for i in range(0, subtitles_qty, max_expressions_per_run):
             bigest_id = i + max_expressions_per_run
             batch = subtitles_json[i:bigest_id]
-            prompt = get_prompt(default_prompt_path, {"DATA": batch})
+            variables['DATA'] = batch
+            prompt = get_prompt('build', 'expressions', variables)
             prompt_json = json.loads(prompt)
 
             response = analyze_with_gemini(prompt_json=prompt_json)
@@ -61,27 +61,25 @@ def expressions(subtitles_path, output_path):
     except Exception as e:
         print(f"\t\t\tError taking expressions: {e}")
         print(f"\t\t\tTrying again...")
-        return expressions(subtitles_path, output_path)
+        return expressions(channel_id, title_id)
     
     for expression in all_expressions:
         subtitles_json[expression['id']-1]['expression'] = expression['expression']
 
-    export('expressions', subtitles_json, 'json', f"{output_path}/")
+    database.export('expressions', subtitles_json, 'json', f"{output_path}/")
     return subtitles_json
 
-def subtitles(audio_path, output_path):   
-    os.makedirs(output_path, exist_ok=True)
-    subtitles_file = f"{output_path}/subtitles.srt"
+def subtitles(audio_path, channel_id, title_id):   
+    subtitles_path = f"storage/thought/{channel_id}/{title_id}"
+    subtitles_file = f"{subtitles_path}/subtitles.srt"
     
     if os.path.exists(subtitles_file):
-        return subtitles_file 
+        return database.get_subtitles(channel_id, title_id)
     
-    language = get_final_language()
+    channel = database.get_channel_by_id(channel_id)
+    language = channel['language']
     print("\t\t-Generating subtitles...")
 
-    subtitles_dir = Path(output_path)
-    subtitles_dir.mkdir(exist_ok=True)
-    subtitles_path = subtitles_dir / f"subtitles.srt"
     model = whisper.load_model("medium")
     language_code = get_language_code(language)
 
@@ -94,22 +92,8 @@ def subtitles(audio_path, output_path):
                     # fp16=False  
                     verbose=False
                 )   
-
-        with open(subtitles_path, "w", encoding="utf-8") as file:
-            for i, segment in enumerate(result["segments"]):
-                start_time = segment['start']
-                end_time = segment['end']
-                text = segment['text'].strip()
-
-                start_subtitiles = f"{int(start_time//3600):02}:{int(start_time%3600//60):02}:{int(start_time%60):02},{int(start_time%1*1000):03}"
-                end_subtitles = f"{int(end_time//3600):02}:{int(end_time%3600//60):02}:{int(end_time%60):02},{int(end_time%1*1000):03}"
-
-                file.write(f"{i + 1}\n")
-                file.write(f"{start_subtitiles} --> {end_subtitles}\n")
-                file.write(f"{text}\n\n")
-
-        print(f"\t\t-Subtitles generated successfull: {subtitles_path}")
-        return str(subtitles_path)
+        database.export('subtitles', result["segments"], format='srt', path=f"{subtitles_path}/")
+        return database.get_subtitles(channel_id, title_id)
     
     except Exception as e:
         print(f"Subtitles error: {e}")

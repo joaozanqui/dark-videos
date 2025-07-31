@@ -1,16 +1,13 @@
 
 import scripts.ideas.new_channel as new_channel 
-from scripts.utils import get_gemini_model, analyze_with_gemini, export
-import json
+from scripts.utils import get_gemini_model, analyze_with_gemini
 from string import Template
 import os
+import scripts.database as database
 
 def build_prompt_template(channel, insights_p1, insights_p2, step):
-    template_path = f"scripts/ideas/prompts/"
-    template_file = f"{template_path}channel-{step}.txt"
-
-    with open(template_file, "r", encoding="utf-8") as file:
-        prompt_template = file.read()
+    file_name = f"channel-{step}.txt"
+    prompt_template = database.get_prompt_template('ideas', file_name)
     template = Template(prompt_template)
 
     variables = {
@@ -37,22 +34,14 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
     if insights_p1 and insights_p2 and insights_p3:
         print("\n--- Generating Viral Channel and Videos Ideas (using Gemini) ---")
 
-        channels_path = 'storage/ideas'
-        os.makedirs(channels_path, exist_ok=True)
-
-        channels_file = f"{channels_path}/channels.json"
-        if os.path.exists(channels_file):
-            with open(channels_file, "r", encoding="utf-8") as file:
-                old_channels = json.load(file) 
-        else:
-            old_channels = []
+        old_channels = database.get_channels()
 
         next_channel_id = max(channel["id"] for channel in old_channels) + 1 if len(old_channels) else 1
 
         new_channels = new_channel.run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, gemini_model)
         old_channels.extend(new_channels)
 
-        channels_ideas = export('channels', old_channels, format='json',path='storage/ideas/')
+        channels_ideas = database.export('channels', old_channels, format='json',path='storage/ideas/')
         print(f"New channel ideas saved at {channels_ideas}")
 
         for i, channel in enumerate(new_channels):
@@ -64,7 +53,7 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
                     prompt = get_channel_info_prompt(channel, insights_p1, insights_p2, gemini_model, step=step)
                     if not prompt: 
                         return None
-                    export(step, prompt, path=images_prompt_path)
+                    database.export(step, prompt, path=images_prompt_path)
     else:
         print("\nSkipping as not all preceding insights are available.")
         return {}

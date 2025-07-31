@@ -4,6 +4,8 @@ from config.config import GEMINI_API_KEY, MODEL_NAME, DEFAULT_GENERATION_CONFIG
 from typing import Optional, Dict, Any
 import re
 import json
+import scripts.database as database
+import scripts.sanitize as sanitize
 from string import Template
 import time
 from pathlib import Path
@@ -24,23 +26,7 @@ def get_last_downloaded_file():
         return None
 
     last_file = max(files, key=os.path.getctime)
-    return last_file
-
-def export(file_name: str, data: str, format='txt', path='storage/') -> str:
-    try:
-        os.makedirs(path, exist_ok=True)
-        export_path = f"{path}{file_name}.{format}"
-        with open(export_path, 'w', encoding='utf-8') as f:
-            if format == 'json':
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            else:
-                f.write(data)
-        
-        return export_path
-    except Exception as e:
-        print(f"Error exporting {file_name}: {e}")
-        return None
-    
+    return last_file 
 
 def get_gemini_model(
     generation_config: dict | None = None,
@@ -137,39 +123,18 @@ def format_json_response(response):
 
     except Exception as e:
         print(f"\t\t\t - Error decoding JSON from subject response.: {e}") 
-        return format_json_response(response)
+        print(f"\n{response}")
+        return ''
     
     return []
 
-def get_prompt(prompt_file, variables):
-    prompt_path = f"{prompt_file}"
-    with open(prompt_path, "r", encoding="utf-8") as file:
-        prompt_template = file.read()
-        
+def get_prompt(step, file_name, variables):
+    sanitized_variables = sanitize.variables(variables)
+    prompt_template = database.get_prompt_template(step, file_name)
     template = Template(prompt_template)
-    prompt = template.safe_substitute(variables)
+    prompt = template.safe_substitute(sanitized_variables)
     
     return prompt
-
-def get_final_language():
-    with open('config/data.json', "r", encoding="utf-8") as file:
-        data = json.load(file)    
-    language = data['final_language']
-
-    if not language:
-        language = 'english'
-
-    return language
-
-def get_videos_duration():
-    with open('config/data.json', "r", encoding="utf-8") as file:
-        data = json.load(file)    
-    duration = data['duration']
-
-    if not duration:
-        duration = 20
-
-    return duration
 
 def get_language_code(language_input: str) -> str | None:
     normalized_input = language_input.lower()
@@ -187,25 +152,24 @@ def get_language_code(language_input: str) -> str | None:
     
     return None
 
-def get_variables(channel_id):
-    path = f"storage/thought/{channel_id}/"
-    file = os.path.join(path, 'variables.json')
-
-    if os.path.exists(file):
-        with open(file, "r", encoding="utf-8") as file:
-            variables = json.load(file)     
-        for variable in variables:
-            variable = sanitize_text(variable)
-        return variables
+def get_allowed_expressions(channel_id, is_video=False):
+    path = f"assets/expressions/{str(channel_id)}/{'chroma' if is_video else 'transparent'}"
+    allowed_expressions = []
+    for expression in os.listdir(path):
+        full_path = os.path.join(path, expression)
+        if os.path.isfile(full_path):
+            allowed_expressions.append(expression.split('.')[0])
     
-    return []
+    return allowed_expressions
 
-def sanitize_text(text):
-    if isinstance(text, str):
-        return (
-            text.replace('\\', '\\\\')
-                .replace('"', "'")
-                .replace('\n', '\\n')
-                .replace('\t', '\\t')
-        )
-    return text
+def build_template(variables, step, file_name):
+    prompt_template = database.get_prompt_template(step, file_name)
+    template = Template(prompt_template)
+
+    prompt = template.safe_substitute(variables)
+
+    prompt_json = json.loads(prompt)
+    
+    # na chamada em config.prompts nao tem essa linha de baixo
+    prompt = json.dumps(prompt_json, indent=2, ensure_ascii=False)
+    return prompt

@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
-import json
-from scripts.utils import ALLOWED_IMAGES_EXTENSIONS
 import scripts.video_build.generate as generate
-import scripts.video_build.thumbnail as thumbnail
 import scripts.video_build.background_video as background_video
 import scripts.video_build.expressions_images as expressions_images
+import gc
+import scripts.database as database
+import srt
+from datetime import timedelta
 
 def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip, intro_file: str):
     background_music = background_music.volumex(0.5)
@@ -21,7 +22,7 @@ def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip
 
     return final_audio
 
-def create_subtitles(subtitles_path, background_video_composite):
+def create_subtitles(background_video_composite, subtitles_srt):
     def subtitle_generator(txt):
         return TextClip(
             txt,
@@ -33,8 +34,14 @@ def create_subtitles(subtitles_path, background_video_composite):
             size=(int(background_video_composite.w * 0.45), None),
             bg_color='rgba(0, 0, 0, 0.6)',
         )
+    
+    parsed_subs = list(srt.parse(subtitles_srt))
+    subtitles_data = [
+        ((sub.start.total_seconds(), sub.end.total_seconds()), sub.content)
+        for sub in parsed_subs
+    ]
 
-    subtitles = SubtitlesClip(subtitles_path, subtitle_generator)
+    subtitles = SubtitlesClip(subtitles_data, subtitle_generator)
     subtitles_x = int(background_video_composite.w // 2)
     subtitles_y = int(background_video_composite.h // 2.5)
     subtitles = subtitles.set_position((subtitles_x, subtitles_y))
@@ -43,11 +50,11 @@ def create_subtitles(subtitles_path, background_video_composite):
 
 def create_video(
     background_video_composite: CompositeVideoClip,
-    subtitles_path: str,
     expressions_images_composite: CompositeVideoClip,
     intro_file: str,
+    subtitles_srt: str,
 ):
-    subtitles = create_subtitles(subtitles_path, background_video_composite)
+    subtitles = create_subtitles(background_video_composite, subtitles_srt)
     main_video = CompositeVideoClip([
         background_video_composite,
         expressions_images_composite,
@@ -62,11 +69,11 @@ def create_video(
 
     return final_video
 
-def build_video(audio_path, default_path, channel_id, output_video_path, music_mood):
+def build_video(audio_path, default_path, output_video_path, music_mood, channel_id, title_id):
     narration_audio = AudioFileClip(audio_path)
     background_music = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
-    subtitles_path = generate.subtitles(audio_path, output_path=default_path)
-    subtitles_with_expressions = generate.expressions(subtitles_path, output_path=default_path)
+    subtitles_srt = generate.subtitles(audio_path, channel_id, title_id)
+    subtitles_with_expressions = generate.expressions(channel_id, title_id)
     subtitles = fix_subtitles_time(subtitles_with_expressions)
 
     background_video_composite = background_video.run(narration_audio.duration, output_path=default_path)
@@ -75,12 +82,13 @@ def build_video(audio_path, default_path, channel_id, output_video_path, music_m
     intro_file = f"assets/intros/{channel_id}/intro.mp4"
 
     audio = create_audio(narration_audio, background_music, intro_file)
-    video = create_video(background_video_composite, subtitles_path, expressions_images_composite, intro_file)
+    video = create_video(background_video_composite, expressions_images_composite, intro_file, subtitles_srt)
     render_video(audio, video, output_video_path)
 
 def render_video(audio, video, output_path):       
     video.audio = audio
     video.fps = 24
+    gc.collect()
     
     print(f"\t\t-Exporting final video: {output_path}")
     video.write_videofile(
@@ -93,15 +101,17 @@ def render_video(audio, video, output_path):
     
     print("\t\t-Video built successful!")
 
-def save_infos(title, description_path, output_path):
+def save_infos(title, channel_id, title_id):
+    output_path = f"storage/videos/{channel_id}/{title_id}"
+    file_name = "infos"
+    if os.path.exists(f"{output_path}/{file_name}.txt"):
+        return
+        
     try:
         print("\t\t-Saving infos...")
-        with open(description_path, "r", encoding="utf-8") as file:
-            description = file.read()
-
+        description = database.get_video_description(channel_id, title_id)
         infos = f"{title}\n\n{description}"
-        with open(output_path, "w", encoding="utf-8") as infos_path:
-                infos_path.write(infos)
+        database.export(file_name, infos, path=f"{output_path}/")
         print("\t\t-Done!")
         
     except Exception as e:
@@ -127,29 +137,13 @@ def has_all_files(audio_path, description_path):
     
     return True
 
-def has_image_file(default_path):
-    image_path = ''
-    for ext in ALLOWED_IMAGES_EXTENSIONS:
-        image_path = f"{default_path}/image.{ext}"
-        has_image = os.path.exists(image_path)
-        if has_image:
-            return image_path
-        
-    print(f"\t\t-No image file")
-    return ''    
-
 def run(channel_id):
     print("--- Building Videos ---\n")
     music_mood = "calm"
-
-    with open('storage/ideas/channels.json', "r", encoding="utf-8") as file:
-        channels = json.load(file)    
-
-    channel = channels[int(channel_id)-1]
+    channel = database.get_channel_by_id(channel_id)
 
     print(f"- {channel['name']}")
-    with open(f"storage/ideas/titles/{channel_id}.json", "r", encoding="utf-8") as file:
-        titles = json.load(file)
+    titles = database.get_titles(channel_id)
 
     for title_id, title in enumerate(titles):
         print(f"\t-({channel_id}/{title_id}) {title['title']}")
@@ -167,21 +161,13 @@ def run(channel_id):
         if not has_all_files(audio_path, description_path):
             continue
         
-        image_path = has_image_file(default_path)
-        if image_path:
-            output_thumbnail_path = str(final_dir / f"thumbnail.png")
-            if not os.path.exists(output_thumbnail_path):
-                thumbnail.run(image_path, output_thumbnail_path, default_path, channel_id)
-
-        output_infos_path = str(final_dir / f"infos.txt")
-        if not os.path.exists(output_infos_path):
-            save_infos(title['title'], description_path, output_infos_path)
+        save_infos(title['title'], channel_id, title_id)
 
         if is_video_generated:
             print(f"\t\t-Video file already exists!")
             continue
 
-        build_video(audio_path, default_path, channel_id, output_video_path, music_mood)
+        build_video(audio_path, default_path, output_video_path, music_mood, channel_id, title_id)
 
     
     print("\n--- Process Finished ---")
