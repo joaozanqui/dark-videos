@@ -16,7 +16,7 @@ from scripts.channel_analysis.gemini_analyzer import (
 import scripts.utils.gemini as gemini
 import scripts.database as database
 
-def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path):
+def transcripts_analysis(most_viewed_videos, channel_name, analysis_path):
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
     analysis = ''
@@ -24,11 +24,11 @@ def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path)
     for video in videos:
         transcripts = get_transcripts(video['video_id'])
         prompt_p3 = generate_phase3_prompt(transcripts, video['title'])
-        analysis += gemini.run(prompt_text=prompt_p3, gemini_model=model)
+        analysis += gemini.run(prompt_text=prompt_p3)
         analysis += "\n"
     
     prompt_p3 = generate_phase3_merge_prompt(analysis, most_viewed_videos_qty, channel_name)
-    insights_p3 = gemini.run(prompt_text=prompt_p3, gemini_model=model)
+    insights_p3 = gemini.run(prompt_text=prompt_p3)
     
     if not insights_p3:
         print("Failed to get insights from Phase 3.")
@@ -39,7 +39,7 @@ def transcripts_analysis(most_viewed_videos, channel_name, model, analysis_path)
     
     return insights_p3
     
-def comments_analysis(most_viewed_videos, model, analysis_path):    
+def comments_analysis(most_viewed_videos, analysis_path):    
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
        
@@ -54,7 +54,7 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
         comments_text += "\n"    
         
     prompt_p2 = generate_phase2_prompt(comments_text)
-    insights_p2 = gemini.run(prompt_text=prompt_p2, gemini_model=model)
+    insights_p2 = gemini.run(prompt_text=prompt_p2)
     
     if not insights_p2:
         print("Failed to get insights from Phase 2.")
@@ -65,9 +65,9 @@ def comments_analysis(most_viewed_videos, model, analysis_path):
     
     return insights_p2
     
-def channel_analysis(channel_name, channel_description, videos_list, model, analysis_path):    
+def channel_analysis(channel_name, channel_description, videos_list, analysis_path):    
     prompt_p1 = generate_phase1_prompt(channel_name, channel_description, videos_list)
-    insights_p1 = gemini.run(prompt_text=prompt_p1, gemini_model=model)
+    insights_p1 = gemini.run(prompt_text=prompt_p1)
     
     if not insights_p1:
         print("Failed to get insights from Phase 1.")
@@ -111,7 +111,6 @@ def get_next_analysis():
     return [next_analysis_id, analysis_path]
 
 def run_full_analysis_pipeline():
-    gemini_model = gemini.get_model()
     analysis_id, analysis_path = get_next_analysis()
     
     print("\n--- Step 1: Fetching YouTube Channel Data ---")
@@ -121,12 +120,12 @@ def run_full_analysis_pipeline():
     most_viewed_videos = sorted(videos_list, key=lambda x: x["viewCount"], reverse=True)
     
     print("\n--- Phase 1: Initial Channel Analysis (using Gemini) ---")
-    insights_p1 = channel_analysis(channel_name, channel_description, videos_list, gemini_model, analysis_path)
+    insights_p1 = channel_analysis(channel_name, channel_description, videos_list, analysis_path)
     
     print("\n--- Phase 2: Comment Analysis (using Gemini) ---")
-    insights_p2 = comments_analysis(most_viewed_videos, gemini_model, analysis_path)
+    insights_p2 = comments_analysis(most_viewed_videos, analysis_path)
 
     print("\n--- Phase 3: Transcript Analysis (using Gemini) ---")
-    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, gemini_model, analysis_path)
+    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, analysis_path)
 
     return [insights_p1, insights_p2, insights_p3, analysis_id]

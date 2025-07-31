@@ -19,9 +19,9 @@ def build_prompt_template(channel, insights_p1, insights_p2, step):
     prompt = template.safe_substitute(variables)
     return prompt
 
-def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
+def get_channel_info_prompt(channel, insights_p1, insights_p2, step):
     prompt = build_prompt_template(channel, insights_p1, insights_p2, step)
-    response = gemini.run(prompt_text=prompt, gemini_model=model)
+    response = gemini.run(prompt_text=prompt)
     
     if not response:
         return None
@@ -29,8 +29,6 @@ def get_channel_info_prompt(channel, insights_p1, insights_p2, model, step):
     return response
 
 def run(insights_p1, insights_p2, insights_p3, analysis_id):
-    gemini_model = gemini.get_model()
-
     if insights_p1 and insights_p2 and insights_p3:
         print("\n--- Generating Viral Channel and Videos Ideas (using Gemini) ---")
 
@@ -38,7 +36,7 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
 
         next_channel_id = max(channel["id"] for channel in old_channels) + 1 if len(old_channels) else 1
 
-        new_channels = new_channel.run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id, gemini_model)
+        new_channels = new_channel.run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id)
         old_channels.extend(new_channels)
 
         channels_ideas = database.export('channels', old_channels, format='json',path='storage/ideas/')
@@ -50,7 +48,7 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id):
 
             for step in ["logo", "profile", "banner", "description"]:
                 if not os.path.exists(f"{images_prompt_path}{step}.txt"):
-                    prompt = get_channel_info_prompt(channel, insights_p1, insights_p2, gemini_model, step=step)
+                    prompt = get_channel_info_prompt(channel, insights_p1, insights_p2, step=step)
                     if not prompt: 
                         return None
                     database.export(step, prompt, path=images_prompt_path)

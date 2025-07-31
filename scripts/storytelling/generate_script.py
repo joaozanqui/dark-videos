@@ -3,6 +3,7 @@ import unicodedata
 import langid
 import scripts.database as database
 import scripts.utils.handle_text as handle_text
+import scripts.utils.gemini as gemini
 
 def is_language_right(text, language):
     language_code = handle_text.get_language_code(language)
@@ -18,16 +19,19 @@ def normalize(text):
     text = re.sub(r'[^\w\s]', '', text) 
     return text
 
-def has_multiple_forbidden_terms(full_script, language):
-    normalized = normalize(full_script)
+def has_multiple_forbidden_terms(text):
+    normalized = normalize(text)
     pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|\(topic|topic\)|Topic|theme|visual)\b'
     matches = re.findall(pattern, normalized)
-
-    error = len(matches) > 1 or not is_language_right(full_script, language)
+    
+    return len(matches) > 1
+    
+def is_text_wrong(text, language):
+    error = has_multiple_forbidden_terms(text) or not is_language_right(text, language)
 
     if error:
-        database.export('full_script', full_script, path='./')
-        print("\t\t\t - Script generated with forbidden terms... Trying again...")
+        database.export('Wrong Script', text)
+        print("\t\t\t- Script generated with forbidden terms... Trying again...")
 
     return error
 
@@ -65,46 +69,80 @@ def save_topics_variables(topics, video_duration):
 
     return variables
 
-def run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt=0):
+def initialize_chat(script_agent_prompt, script_template_prompt, variables):
+    chat = gemini.new_chat(script_agent_prompt)
+    script_structure_prompt = script_template_prompt.safe_substitute(variables)
+
+    try:
+        chat.send_message(script_structure_prompt)
+    except Exception as e:
+        print(f"Error initializing gemini chat: {e}")
+        gemini.goto_next_model()
+        return initialize_chat(script_agent_prompt, script_template_prompt, variables)
+
+    return chat
+
+def introduction_chat(chat, variables):
+    introduction_prompt = database.build_prompt('script', 'script_introduction', variables, send_as_json=True)   
+    last_response = chat.send_message(introduction_prompt)
+    
+    return last_response.text
+
+def development_chat(chat, chapter, development_topics, variables):
+    variables['DEVELOPMENT_CHAPTER_NUMBER'] = chapter + 1
+    variables['DEVELOPMENT_TITLE'] = handle_text.sanitize(development_topics['title'])
+    variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topics['subtopic_1'])
+    variables['DEVELOPMENT_SUBTOPIC_2'] = handle_text.sanitize(development_topics['subtopic_2'])
+    variables['DEVELOPMENT_SUBTOPIC_3'] = handle_text.sanitize(development_topics['subtopic_3'])
+    variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topics['subtopic_4'])
+    variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topics['subtopic_5'])
+
+    prompt = database.build_prompt('script', 'script_go_next_development', variables, send_as_json=True)   
+    last_response = chat.send_message(prompt)
+    return last_response.text
+
+def conclusion_chat(chat, variables):
+    prompt = database.build_prompt('script', 'script_conclusion', variables, send_as_json=True)   
+    last_response = chat.send_message(prompt)
+
+    return last_response.text
+
+def chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts=0):
+    language = variables['LANGUAGE_AND_REGION']
+    chat = initialize_chat(script_agent_prompt, script_template_prompt, variables)
+    
+    print(f"\t\t\t- Introduction...")
+    introduction_script = introduction_chat(chat, variables)
+    if is_text_wrong(introduction_script, language) and attempts <= 5:
+        attempts += 1
+        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
+    
+    development_script = ''
+    for chapter, development_topics in enumerate(variables['DEVELOPMENTS']):
+        print(f"\t\t\t- Chapter {chapter+1}...")
+        chapter_script = development_chat(chat, chapter, development_topics, variables)
+
+        if is_text_wrong(chapter_script, language) and attempts <= 5:
+            attempts += 1
+            return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
+        
+        development_script += chapter_script
+    
+    print(f"\t\t\t- Conclusion...")
+    conclusion_script = conclusion_chat(chat, variables)
+    if is_text_wrong(conclusion_script, language) and attempts <= 5:
+        attempts += 1
+        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
+    
+    full_script = introduction_script + "\n" + development_script + "\n" + conclusion_script
+    return full_script
+
+
+def run(variables, script_agent_prompt, channel_n, title_n, video_title, script_template_prompt):
     topics_variables = save_topics_variables(variables['TOPICS'], variables['VIDEO_DURATION'])
     variables.update(topics_variables)
     
-    chat_history = agent.start_chat(history=[])
-    script_structure_prompt = script_template_prompt.safe_substitute(variables)
-    chat = chat_history.send_message(script_structure_prompt)
-    introduction_prompt = database.build_prompt('script', 'script_introduction', variables, send_as_json=True)   
-    chat = chat_history.send_message(introduction_prompt)
-    introducion = chat.text
-
-    full_script = introducion
-    if has_multiple_forbidden_terms(introducion, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
-        attempt += 1
-        return run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
-    
-    for i, development_topic in enumerate(variables['DEVELOPMENTS']):
-        variables['DEVELOPMENT_CHAPTER_NUMBER'] = i + 1
-        variables['DEVELOPMENT_TITLE'] = handle_text.sanitize(development_topic['title'])
-        variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topic['subtopic_1'])
-        variables['DEVELOPMENT_SUBTOPIC_2'] = handle_text.sanitize(development_topic['subtopic_2'])
-        variables['DEVELOPMENT_SUBTOPIC_3'] = handle_text.sanitize(development_topic['subtopic_3'])
-        variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topic['subtopic_4'])
-        variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topic['subtopic_5'])
-
-        prompt = database.build_prompt('script', 'script_go_next_development', variables, send_as_json=True)   
-        chat = chat_history.send_message(prompt)
-        full_script += chat.text
-
-        if has_multiple_forbidden_terms(chat.text, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
-            attempt += 1
-            return run(variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
-    
-    prompt = database.build_prompt('script', 'script_conclusion', variables, send_as_json=True)   
-    chat = chat_history.send_message(prompt)
-    full_script += chat.text
-
-    if has_multiple_forbidden_terms(chat.text, variables['LANGUAGE_AND_REGION']) and attempt <= 5:
-        attempt += 1
-        return (variables, agent, channel_n, title_n, video_title, script_template_prompt, attempt)
+    full_script = chat_with_model(script_agent_prompt, script_template_prompt, variables)
 
     database.export(f"full_script", full_script, path=f"storage/thought/{channel_n}/{title_n}/")        
     return full_script

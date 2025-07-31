@@ -124,7 +124,7 @@ def get_prompt_file(channel_id, step='', file=''):
         return ''
     
     path = f"storage/prompts/{str(channel_id)}/{step}{'/' if step else ''}{str(file)}.json"
-    prompt = get_json_data(path)
+    prompt = get_txt_data(path)
     
     return prompt
 
