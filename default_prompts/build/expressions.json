@@ -18,7 +18,8 @@
         "select_an_expression": {
             "mission": [
                 "For the current id, you MUST choose only one expression from the list_of_allowed_expressions.",
-                "Do not invent new expressions or deviate from this exact list."
+                "Do not invent new expressions or deviate from this exact list.",
+                "Try to vary between the allowed expressions so that you don't repeat the same expression too many times in a row."
             ],
             "list_of_allowed_expressions": "${ALLOWED_EXPRESSIONS}"
         },

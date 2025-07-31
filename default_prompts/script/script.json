@@ -3,7 +3,8 @@
         "role": "Specialized YouTube Scriptwriter",
         "expertise": "Creating ${VIDEO_DURATION} minutes duration narration script for a YouTube channel aimed at a specific audience.",
         "description": "You are highly specialized in creating scripts for a YouTube channel aimed at ${TARGET_AUDIENCE_DEMOGRAPHICS_AND_PSYCHOGRAPHICS}.",
-        "main_task": "Your task is to generate the exact spoken text for a video's narration based on the provided title and key topics. "
+        "main_task": "Your task is to generate the exact spoken text for a video's narration based on the provided title and key topics. ",
+        "important": "Remember the video_title (${VIDEO_TITLE}) and the video_rationale (${RATIONALE}) to generate each topic."
     },
     "context": {
         "channel_niche": "The channel approaches the ${FACTOR_TYPE} factor that sabotages one's ${DESIRED_SKILL_OR_CONNECTION} and ${GOAL_TO_DISCERN}.",

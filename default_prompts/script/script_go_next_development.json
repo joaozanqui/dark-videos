@@ -8,7 +8,8 @@
             "Don't write any visual instruction, only the required text, please.",
             "Don't write any instructions, only the required text, please."
         ],
-        "main_task": "Excellent! You can continue to the next chapter. Please note that this chapter is ${DEVELOPMENT_DURATION} minutes long! Don't include emojis (❌, ✅, 👉, etc.). Always add a period to headings and subheadings, for example: “Listen carefully”. (Add a period (.))."
+        "main_task": "Excellent! You can continue to the next chapter. Please note that this chapter is ${DEVELOPMENT_DURATION} minutes long! Don't include emojis (❌, ✅, 👉, etc.). Always add a period to headings and subheadings, for example: “Listen carefully”. (Add a period (.)).",
+        "important": "Remember the video_title (${VIDEO_TITLE}) and the video_rationale (${RATIONALE}) to generate each topic."
     },
     "context": {
         "chapter_number": "${DEVELOPMENT_CHAPTER_NUMBER} of ${DEVELOPMENT_QTY}",
