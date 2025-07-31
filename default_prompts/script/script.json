@@ -42,7 +42,8 @@
         "Strategic repetition.",
         "Uses repetition as a hypnotic and reinforcing tool:",
         "This repetition creates an emotional rhythm and strengthens the connection to the message.",
-        "Write the script with well-structured paragraphs, like a continuous emotional narrative. Avoid excessive line breaks. Vary the beginning of the first paragraph according to each theme, emotion, or feeling. Each paragraph should develop a complete, deep, and fluid idea, with smooth transitions between sentences. DO NOT use sentences that are too short. "
+        "Write the script with well-structured paragraphs, like a continuous emotional narrative. Avoid excessive line breaks. Vary the beginning of the first paragraph according to each theme, emotion, or feeling. Each paragraph should develop a complete, deep, and fluid idea, with smooth transitions between sentences. DO NOT use sentences that are too short. ",
+        "WRITE IN FULL, FLOWING PARAGRAPHS. Every sentence must end with a period. Structure the text as natural, spoken prose."
     ],
     "never_do": [
         "ABSOLUTELY NO INSTRUCTIONS. Your output must not contain any kind of instructional text.",
@@ -54,7 +55,7 @@
         "NO METADATA OR INSTRUCTIONS. Your output must not contain any form of non-narration text. This means no titles, no subheadings, no [visual cues], no (parentheticals), no scene descriptions, no transitions, and no notes. The context provided above is for your inspiration only and must not appear in your response.",
         "PURE NARRATION TEXT ONLY. Your final response must exclusively contain the words to be spoken by the narrator. Nothing else. Do not add any notes, titles, or explanations.",
         "NO TITLES OR HEADINGS IN THE OUTPUT. Do not write the introduction title (e.g., '${INTRODUCTION_TITLE}') or any other subheadings in your response. The title and bullet points provided above are your context and inspiration only; they must not appear in the final text.",
-        "WRITE IN FULL, FLOWING PARAGRAPHS. Every sentence must end with a period. Structure the text as natural, spoken prose."
+        "DO NOT MAKE INTRODUCTIONS, SUCH AS 'HI, I AM THE PRESENTER SO-AND-SO.'"
     ],
     "final_command": "Wait for more instructions to write the script in ${LANGUAGE_AND_REGION} one chapter by one."
 }

@@ -54,6 +54,7 @@
     },
     "output_format": {
         "instructions": "Your output MUST be a single, raw JSON object. DO NOT include any explanatory text, markdown formatting (like ```json), or any characters whatsoever before or after the JSON structure.",
+        "variables_structure": "Do not write lists (arrays). If the variable is a list write it in one line separated by ','",
         "required_json_structure": "${variables}"
     }
 }

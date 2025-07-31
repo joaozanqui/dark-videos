@@ -20,36 +20,14 @@
                 "For the current id, you MUST choose only one expression from the list_of_allowed_expressions.",
                 "Do not invent new expressions or deviate from this exact list."
             ],
-            "list_of_allowed_expressions": [
-                "serious",
-                "admiration",
-                "joy",
-                "relief",
-                "concentration",
-                "confusion",
-                "guilt",
-                "mistrust",
-                "contempt",
-                "enthusiasm",
-                "envy",
-                "irony",
-                "fear",
-                "disgust",
-                "pride",
-                "passion",
-                "anger",
-                "surprise",
-                "boredom",
-                "shyness",
-                "sadness"
-            ]
+            "list_of_allowed_expressions": "${ALLOWED_EXPRESSIONS}"
         },
         "format_the_output": {
             "mission": [
                 "Your entire response MUST be a single, valid JSON object.",
                 "This object will contain an ID and an EXPRESSION parameter.",
-                "The dictionary must contain exactly two key-value pairs: 'id'(The ID of the text snippet as an integer.) and 'expression' (The chosen expression from the list as a string).",
-                "Crucially: Do NOT include any text, explanations, apologies, or any characters before or after the JSON object. Your response must start with '[' and end with ']'."
+                "The dictionary must contain exactly two key-value pairs: id (The ID of the text snippet as an integer.) and expression (The chosen expression from the list as a string).",
+                "Crucially: Do NOT include any text, explanations, apologies, or any characters before or after the JSON object. Your response must start with [ and end with ]."
             ],
 
         "output_format_example": [

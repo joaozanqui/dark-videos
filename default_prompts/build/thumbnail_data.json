@@ -49,29 +49,7 @@
                     "Select the expression that best matches the emotion of your generated thumbnail phrase.",
                     "Do not invent new expressions or deviate from this exact list."
                 ],
-                "list_of_allowed_expressions": [
-                    "serious",
-                    "admiration",
-                    "joy",
-                    "relief",
-                    "concentration",
-                    "confusion",
-                    "guilt",
-                    "mistrust",
-                    "contempt",
-                    "enthusiasm",
-                    "envy",
-                    "irony",
-                    "fear",
-                    "disgust",
-                    "pride",
-                    "passion",
-                    "anger",
-                    "surprise",
-                    "boredom",
-                    "shyness",
-                    "sadness"
-                ]
+                "list_of_allowed_expressions": "${ALLOWED_EXPRESSIONS}"
             }
         }
     },

@@ -98,7 +98,8 @@
         "Avoid philosophical questions without offering a path forward, rooted in the comforting truths of ${KNOWLEDGE_BASE_MAIN}.",
         "Avoid meaningless repetition. Use repetition only for rhythm or contemplation.",
         "Avoid referencing external media like 'as we see in the image...' or 'the music shows...'.",
-        "Reduce excessive use of rhetorical questions. One well-placed, soul-awakening question is better than five generic ones."
+        "Reduce excessive use of rhetorical questions. One well-placed, soul-awakening question is better than five generic ones.",
+        "DO NOT MAKE INTRODUCTIONS, SUCH AS 'HI, I AM THE PRESENTER SO-AND-SO.'"
       ]
     }
   }
