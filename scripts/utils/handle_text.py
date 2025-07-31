@@ -38,7 +38,6 @@ def format_json_response(response):
 
     except Exception as e:
         print(f"\t\t\t - Error decoding JSON from subject response.: {e}") 
-        print(f"\n{response}")
         return ''
     
     return []
