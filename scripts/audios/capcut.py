@@ -61,6 +61,7 @@ def save_audio_downloaded(file_name: str = 'audio', path: str = 'storage/audios'
         return None
     
 def download_audio():
+    time.sleep(2)
     gui.click(BUTTONS['download_button'])
     time.sleep(0.5)
     gui.click(BUTTONS['only_audio_button'])
