@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 
 PIXABAY_KEY = 0
 
-def resize_and_crop_clip(clip, target_resolution=(1920, 1080)):
+def resize_and_crop_clip(clip, target_resolution):
     target_w, target_h = target_resolution
     target_aspect = target_w / target_h
     clip_aspect = clip.w / clip.h
@@ -27,10 +27,7 @@ def resize_and_crop_clip(clip, target_resolution=(1920, 1080)):
         y_center=clip_resized.h / 2
     )
 
-def fetch_pixabay_videos_page(page=1, per_page=50, api_key=''):
-    VIDEO_QUERY = "drone"
-    VIDEO_ORIENTATION = "horizontal"
-    
+def fetch_pixabay_videos_page(video_orientation, video_query, page=1, per_page=50, api_key=''):
     if not api_key:
         return
     
@@ -38,8 +35,8 @@ def fetch_pixabay_videos_page(page=1, per_page=50, api_key=''):
     url = "https://pixabay.com/api/videos/"
     params = {
         "key": api_key,
-        "q": VIDEO_QUERY,
-        "orientation": VIDEO_ORIENTATION,
+        "q": video_query,
+        "orientation": video_orientation,
         "per_page": per_page,
         "page": page
     }
@@ -75,7 +72,7 @@ def next_pixabay_api_key():
     
     return PIXABAY_API_KEYS[PIXABAY_KEY]
 
-def create_background_video(target_duration: float, temp_paths: list):
+def create_background_video(target_duration: float, temp_paths: list, video_orientation: str, video_query: str, target_resolution: tuple):
     clips = []
     total_duration = 0
     page = 1
@@ -85,7 +82,7 @@ def create_background_video(target_duration: float, temp_paths: list):
 
     while total_duration < target_duration and page <= max_pages:
         api_key = next_pixabay_api_key()
-        hits = fetch_pixabay_videos_page(page=page, api_key=api_key)
+        hits = fetch_pixabay_videos_page(video_orientation, video_query, page=page, api_key=api_key)
         if not hits:
             print("\t\t- No more videos found.")
             break
@@ -108,7 +105,7 @@ def create_background_video(target_duration: float, temp_paths: list):
                 temp_paths.append(filepath)
                 
                 clip = VideoFileClip(filepath)
-                processed_clip = resize_and_crop_clip(clip)
+                processed_clip = resize_and_crop_clip(clip, target_resolution=target_resolution)
                 
                 clips.append(processed_clip)
                 total_duration += processed_clip.duration
@@ -126,11 +123,7 @@ def create_background_video(target_duration: float, temp_paths: list):
             
     return clips
 
-def run(duration, output_path):
-    final_video_path = os.path.join(output_path, "background_video.mp4")
-    if os.path.exists(final_video_path):
-        return final_video_path
-
+def run(duration, video_orientation='horizontal', video_query='drone', target_resolution=(1920, 1080)):
     print(f"\t\t-Building a {duration}s background video")
 
     if not PIXABAY_API_KEYS:
@@ -138,7 +131,7 @@ def run(duration, output_path):
 
     temp_paths = []
     try:
-        selected_clips = create_background_video(duration, temp_paths)
+        selected_clips = create_background_video(duration, temp_paths, video_orientation=video_orientation, video_query=video_query, target_resolution=target_resolution)
                 
         if not selected_clips:
             raise ValueError("No valid video found.")

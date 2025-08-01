@@ -8,6 +8,7 @@ import scripts.images.main as images
 import scripts.images.thumbnail as thumbnail
 import scripts.audios.main as audios
 import scripts.video_build.main as video_build
+import scripts.shorts.main as shorts
 import scripts.database as database
 import os
 import re
@@ -75,7 +76,10 @@ def run_process():
         "Download Images",
         "Build Thumbnail",
         "Generate Audios",
-        "Build Videos"
+        "Build Videos",
+        "Create Shorts Ideas",
+        "Generate Shorts Audios",
+        "Build Shorts",
     ]
     
     action = 0
@@ -124,6 +128,12 @@ def run_process():
                     audios.run(channel['id'])
                 elif action == 12:
                     video_build.run(channel['id'])
+                elif action == 13:
+                    shorts.run(channel['id'])
+                elif action == 14:
+                    shorts.audios(channel['id'])
+                elif action == 15:
+                    shorts.build(channel['id'])
 
 if __name__ == "__main__":
     run_process()

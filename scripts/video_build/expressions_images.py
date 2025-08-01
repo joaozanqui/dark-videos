@@ -7,7 +7,8 @@ def parse_srt_time(time_str):
     t = datetime.strptime(time_str, "%H:%M:%S,%f")
     return t.hour * 3600 + t.minute * 60 + t.second + t.microsecond / 1_000_000
 
-def run(expressions_path, subtitles_with_expressions, duration):
+def run(expressions_path, subtitles_with_expressions, duration, position_h=-200, position_v='center', expressions_size=1.2):
+    print("\t\t- Building the expressions videofile...")
     image_clips = []
 
     for entry in subtitles_with_expressions:
@@ -32,8 +33,8 @@ def run(expressions_path, subtitles_with_expressions, duration):
     expressions_video = CompositeVideoClip(image_clips, size=None, bg_color=None)
     expressions_video = expressions_video.set_duration(duration)
     
-    expressions_position=(-200, 'center')
-    expressions_video = expressions_video.resize(1.2)
+    expressions_position=(position_h, position_v)
+    expressions_video = expressions_video.resize(expressions_size)
     expressions_video = expressions_video.set_position(expressions_position)
 
     return expressions_video

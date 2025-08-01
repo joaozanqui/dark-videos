@@ -1,39 +1,6 @@
-import re
-import unicodedata
-import langid
 import scripts.database as database
 import scripts.utils.handle_text as handle_text
 import scripts.utils.gemini as gemini
-
-def is_language_right(text, language):
-    language_code = handle_text.get_language_code(language)
-    lang, _ = langid.classify(text)
-    if lang != language_code:
-        print(f"\t\t -Wrong language ({lang}), it must be {language}")
-
-    return lang == language_code
-
-def normalize(text):
-    text = unicodedata.normalize("NFD", text)
-    text = text.encode("ascii", "ignore").decode("utf-8").lower()
-    text = re.sub(r'[^\w\s]', '', text) 
-    return text
-
-def has_multiple_forbidden_terms(text):
-    normalized = normalize(text)
-    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|\(topic|topic\)|Topic|theme|visual)\b'
-    matches = re.findall(pattern, normalized)
-    
-    return len(matches) > 1
-    
-def is_text_wrong(text, language):
-    error = has_multiple_forbidden_terms(text) or not is_language_right(text, language)
-
-    if error:
-        database.export('Wrong Script', text)
-        print("\t\t\t- Script generated with forbidden terms... Trying again...")
-
-    return error
 
 def save_topics_variables(topics, video_duration):
     introduction = topics['introduction'][0]
@@ -113,7 +80,7 @@ def chat_with_model(script_agent_prompt, script_template_prompt, variables, atte
     
     print(f"\t\t\t- Introduction...")
     introduction_script = introduction_chat(chat, variables)
-    if is_text_wrong(introduction_script, language) and attempts <= 5:
+    if handle_text.is_text_wrong(introduction_script, language) and attempts <= 5:
         attempts += 1
         return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
     
@@ -122,7 +89,7 @@ def chat_with_model(script_agent_prompt, script_template_prompt, variables, atte
         print(f"\t\t\t- Chapter {chapter+1}...")
         chapter_script = development_chat(chat, chapter, development_topics, variables)
 
-        if is_text_wrong(chapter_script, language) and attempts <= 5:
+        if handle_text.is_text_wrong(chapter_script, language) and attempts <= 5:
             attempts += 1
             return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
         
@@ -130,7 +97,7 @@ def chat_with_model(script_agent_prompt, script_template_prompt, variables, atte
     
     print(f"\t\t\t- Conclusion...")
     conclusion_script = conclusion_chat(chat, variables)
-    if is_text_wrong(conclusion_script, language) and attempts <= 5:
+    if handle_text.is_text_wrong(conclusion_script, language) and attempts <= 5:
         attempts += 1
         return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
     
@@ -138,7 +105,7 @@ def chat_with_model(script_agent_prompt, script_template_prompt, variables, atte
     return full_script
 
 
-def run(variables, script_agent_prompt, channel_n, title_n, video_title, script_template_prompt):
+def run(variables, script_agent_prompt, channel_n, title_n, script_template_prompt):
     topics_variables = save_topics_variables(variables['TOPICS'], variables['VIDEO_DURATION'])
     variables.update(topics_variables)
     

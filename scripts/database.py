@@ -89,8 +89,9 @@ def get_topics(channel_id, title_id):
     
     return topics
 
-def get_full_script(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/full_script.txt"
+def get_full_script(channel_id, title_id, file_name='full_script', shorts=False):
+    middle_path = "shorts" if shorts else "thought" 
+    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.txt"
     full_script = get_txt_data(path)
     
     return full_script
@@ -128,14 +129,16 @@ def get_prompt_file(channel_id, step='', file=''):
     
     return prompt
 
-def get_subtitles(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/subtitles.srt"
+def get_subtitles(channel_id, title_id, file_name='subtitles', shorts=False):
+    middle_path = "shorts" if shorts else "thought" 
+    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.srt"
     subtitles = get_txt_data(path)
     
     return subtitles
 
-def get_expressions(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/expressions.json"
+def get_expressions(channel_id, title_id, file_name='expressions', shorts=False):
+    middle_path = "shorts" if shorts else "thought" 
+    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.json"
     expressions = get_json_data(path)
     
     return expressions
@@ -199,3 +202,9 @@ def get_assets_allowed_expressions(channel_id, is_video=False):
             allowed_expressions.append(expression.split('.')[0])
     
     return allowed_expressions
+
+def get_shorts_ideas(channel_id, title_id):
+    path = f"storage/shorts/{str(channel_id)}/{str(title_id)}/shorts_ideas.json"
+    ideas = get_json_data(path)
+    
+    return ideas

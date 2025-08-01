@@ -1,5 +1,7 @@
 import json
 import re
+import unicodedata
+import langid
 
 def refactor_dict(json_file):
     items = []
@@ -73,3 +75,29 @@ def sanitize_variables(variables: dict) -> dict:
         key: sanitize(value) if isinstance(value, str) else value
         for key, value in variables.items()
     }
+
+def is_language_right(text, language):
+    language_code = get_language_code(language)
+    lang, _ = langid.classify(text)
+    if lang != language_code:
+        print(f"\t\t -Wrong language ({lang}), it must be {language}")
+
+    return lang == language_code
+
+def normalize(text):
+    text = unicodedata.normalize("NFD", text)
+    text = text.encode("ascii", "ignore").decode("utf-8").lower()
+    text = re.sub(r'[^\w\s]', '', text) 
+    return text
+
+def has_multiple_forbidden_terms(text):
+    normalized = normalize(text)
+    pattern = r'\*\*|\b(?:sub[-_\s]?)?(tema|topico|\(topic|topic\)|Topic|theme|visual)\b'
+    matches = re.findall(pattern, normalized)
+    
+    return len(matches) > 1
+    
+def is_text_wrong(text, language):
+    error = has_multiple_forbidden_terms(text) or not is_language_right(text, language)
+
+    return error

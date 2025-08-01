@@ -8,15 +8,29 @@ import os
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 import random
 
-def expressions(channel_id, title_id):
-    output_path = f"storage/thought/{channel_id}/{title_id}"
-    expressions_file = f"{output_path}/expressions.json"
+def get_batch(batch, variables):
+    variables['DATA'] = batch
+    prompt = database.build_prompt('build', 'expressions', variables)
+    prompt_json = json.loads(prompt)
+
+    response = gemini.run(prompt_json=prompt_json)
+
+    expressions_json = handle_text.format_json_response(response)
+    if not expressions_json:
+        print(f"\t\t\t\t- Trying again...")
+        gemini.goto_next_model()
+        return get_batch(batch, variables)
+    
+    return expressions_json
+
+def expressions(channel_id, title_id, output_path, file_name='expressions', shorts=False, subtitles_filename='subtitles'):
+    expressions_file = f"{output_path}/{file_name}.json"
     
     if os.path.exists(expressions_file):
-        return database.get_expressions(channel_id, title_id)
+        return database.get_expressions(channel_id, title_id, file_name=file_name, shorts=shorts)
     
     print("\t\t-Taking expressions...")
-    subtitles_srt = database.get_subtitles(channel_id, title_id)
+    subtitles_srt = database.get_subtitles(channel_id, title_id, file_name=subtitles_filename, shorts=shorts)
 
     pattern = re.compile(
         r'(\d+)\s*\n'
@@ -52,30 +66,26 @@ def expressions(channel_id, title_id):
         for i in range(0, subtitles_qty, max_expressions_per_run):
             bigest_id = i + max_expressions_per_run
             batch = subtitles_json[i:bigest_id]
-            variables['DATA'] = batch
-            prompt = database.build_prompt('build', 'expressions', variables)
-            prompt_json = json.loads(prompt)
+            expressions_json = get_batch(batch, variables)
 
-            response = gemini.run(prompt_json=prompt_json)
-            all_expressions.extend(handle_text.format_json_response(response))
+            all_expressions.extend(expressions_json)
             print(f"\t\t\t{bigest_id if bigest_id < subtitles_qty else subtitles_qty}/{subtitles_qty}")
     except Exception as e:
         print(f"\t\t\tError taking expressions: {e}")
         print(f"\t\t\tTrying again...")
-        return expressions(channel_id, title_id)
+        return expressions(channel_id, title_id, output_path, file_name=file_name)
     
     for expression in all_expressions:
         subtitles_json[expression['id']-1]['expression'] = expression['expression']
 
-    database.export('expressions', subtitles_json, 'json', f"{output_path}/")
+    database.export(file_name, subtitles_json, 'json', f"{output_path}/")
     return subtitles_json
 
-def subtitles(audio_path, channel_id, title_id):   
-    subtitles_path = f"storage/thought/{channel_id}/{title_id}"
-    subtitles_file = f"{subtitles_path}/subtitles.srt"
+def subtitles(audio_path, channel_id, title_id, subtitles_path, shorts=False, file_name='subtitles'):   
+    subtitles_file = f"{subtitles_path}/{file_name}.srt"
     
     if os.path.exists(subtitles_file):
-        return database.get_subtitles(channel_id, title_id)
+        return database.get_subtitles(channel_id, title_id, file_name=file_name, shorts=shorts)
     
     channel = database.get_channel_by_id(channel_id)
     language = channel['language']
@@ -93,7 +103,7 @@ def subtitles(audio_path, channel_id, title_id):
                     # fp16=False  
                     verbose=False
                 )   
-        database.export('subtitles', result["segments"], format='srt', path=f"{subtitles_path}/")
+        database.export(file_name, result["segments"], format='srt', path=f"{subtitles_path}/")
         return database.get_subtitles(channel_id, title_id)
     
     except Exception as e:

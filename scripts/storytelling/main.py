@@ -49,7 +49,7 @@ def run(channel_id):
 
         if not has_full_script:
             print(f"\t\t - Full script...")
-            full_script = generate_script.run(variables, script_agent_prompt, channel_id, title_id, title['title'], script_template_prompt)
+            full_script = generate_script.run(variables, script_agent_prompt, channel_id, title_id, script_template_prompt)
         else:
             full_script = database.get_full_script(channel_id, title_id)
         
