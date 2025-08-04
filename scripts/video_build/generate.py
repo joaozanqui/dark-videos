@@ -104,7 +104,7 @@ def subtitles(audio_path, channel_id, title_id, subtitles_path, shorts=False, fi
                     verbose=False
                 )   
         database.export(file_name, result["segments"], format='srt', path=f"{subtitles_path}/")
-        return database.get_subtitles(channel_id, title_id)
+        return database.get_subtitles(channel_id, title_id, file_name=file_name, shorts=shorts)
     
     except Exception as e:
         print(f"Subtitles error: {e}")

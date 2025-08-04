@@ -9,7 +9,6 @@ def create_prompt(variables, file_name):
     template_prompt = Template(prompt)
     
     prompt_str = template_prompt.safe_substitute(variables)
-    database.export('prompt_str', prompt_str)
     prompt_json = json.loads(prompt_str)
     
     return prompt_json
@@ -25,9 +24,9 @@ def generate(variables, file_name, json_response=False):
     return response
 
 def get_description(full_script, idea, variables):
-    variables['FULL_SCRIPT'] = full_script
-    variables['SHORTS_IDEA'] = idea
-    variables['SHORTS_IDEA_TITLE'] = idea['main_title']
+    variables['FULL_SCRIPT'] = handle_text.sanitize(full_script)
+    variables['SHORTS_IDEA'] = handle_text.sanitize(str(idea))
+    variables['SHORTS_IDEA_TITLE'] = handle_text.sanitize(idea['main_title'])
     
     prompt = create_prompt(variables, 'shorts_description')
     response = gemini.run(prompt_json=prompt)  
