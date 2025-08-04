@@ -102,6 +102,11 @@ def chat_with_model(script_agent_prompt, script_template_prompt, variables, atte
         return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
     
     full_script = introduction_script + "\n" + development_script + "\n" + conclusion_script
+
+    if len(full_script > variables['VIDEO_DURATION'] * 1500 or full_script < variables['VIDEO_DURATION'] * 500):
+        print(f"\t\t\t- Wrong script duration (trying again)...")
+        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts=0)
+
     return full_script
 
 
