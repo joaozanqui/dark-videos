@@ -8,6 +8,7 @@ import scripts.images.main as images
 import scripts.images.thumbnail as thumbnail
 import scripts.audios.main as audios
 import scripts.video_build.main as video_build
+import scripts.upload.main as upload
 import scripts.shorts.main as shorts
 import scripts.database as database
 import os
@@ -80,6 +81,7 @@ def run_process():
         "Create Shorts Ideas",
         "Generate Shorts Audios",
         "Build Shorts",
+        "Upload",
     ]
     
     action = 0
@@ -134,6 +136,9 @@ def run_process():
                     shorts.audios(channel['id'])
                 elif action == 15:
                     shorts.build(channel['id'])
+                elif action == 16:
+                    upload.run(channel['id'])
+
 
 if __name__ == "__main__":
     run_process()

@@ -7,6 +7,9 @@ ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
 
 def export(file_name: str, data: str|list, format='txt', path='storage/') -> str:
     try:
+        if path[-1] != '/':
+            path += '/'
+            
         os.makedirs(path, exist_ok=True)
         export_path = f"{path}{file_name}.{format}"
         with open(export_path, 'w', encoding='utf-8') as f:
@@ -164,6 +167,16 @@ def get_thumbnail_prompt(channel_id, title_id):
 def get_channel_by_id(channel_id):
     channels = get_channels()
     return channels[int(channel_id)-1]
+
+def update_channels(channel):
+    channels = get_channels()
+    for index, current_channel in enumerate(channels):
+        if current_channel.get('id') == channel['id']:
+            channels[index] = channel
+            break
+    
+    export('channels', channels, format='json', path='storage/ideas/')
+    return channels
 
 def get_input_final_language():
     data = get_input_data()

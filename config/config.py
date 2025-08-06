@@ -7,6 +7,7 @@ load_dotenv()
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
 PIXABAY_API_KEYS: list | None = json.loads(os.getenv("PIXABAY_API_KEYS")) if os.getenv("PIXABAY_API_KEYS") else None
+FINAL_VIDEOS_PATH: str | None = os.getenv("FINAL_VIDEOS_PATH")
 
 MODEL_NAME = "gemini-2.0-flash"
 
