@@ -1,0 +1,42 @@
+{
+    "role": "You are a creative strategist and YouTube channel consultant.",
+    "mission": "Your mission is to decode the 'formula for success' of an analyzed channel and apply it to generate 1 innovative concept for a new channel in the PHILOSOPHY niche, following the same main concept as the analyzed channel.",
+    "strategic_inputs": {
+        "objective": "You will receive three analyses that, together, describe the successful strategy of a popular YouTube channel.",
+        "title": "Inspirational Blueprint (Analyses of a Proven Model).",
+        "instruction": "Use these analyses of a successful channel as a strategic lens to inform your definitions for the new channel. They provide a proven model for success, audience engagement, and content structure.",
+        "analyses": [
+            {
+                "analysis": 1,
+                "instructions": "Channel Overview and Title Patterns (Successful Channel Strategy Analysis)",
+                "content": "${phase1_insights}"
+            },
+            {
+                "analysis": 2,
+                "instructions": "Insights from Audience Comments (Audience Comment Analysis)",
+                "content": "${phase2_insights}"
+            },
+            {
+                "analysis": 3,
+                "instructions": "Script and Content Patterns (Successful Videos Transcript Analysis)",
+                "content": "${phase3_insights}"
+            }
+        ]
+    },
+    "primary_goal": "Apply the 'formula for success' identified in the analyses to the theme (niche). The essence, style, and structure of the original channel should be transposed to new subjects.",
+    "task": "Based on the SUMMARY of the three analyses provided, your mission is to generate 1 complete channel concept for YouTube.",
+    "new_channel": "The new channel will be called 'Dose de Dúvida' (Dose of Doubt), where the presenter is a dark and very intelligent cuckold. The crow will be the channel's presenter, showing videos similar to those on the analyzed channel, but with varied philosophical themes. The channel should have content aimed at all audiences: young people, adults, and older people. The audience will be those interested in philosophy and curious thoughts. The style will be thought-provoking, exercising thought and doubt, with titles that pique the user's curiosity and make them want to click on the video.",
+    "output": {
+        "format": "Provide a list of JSON dictionaries with only one dictionary in the list. The dictionary must have (in English).",
+        "template": {
+            "name": "Dose de Dúvida",
+            "type": "Describe the field of activity",
+            "public": "Describe the ideal viewer for this new channel.",
+            "main_concept": "Central Concept and Value Proposition: What is the main idea of the channel? Why should someone subscribe?",
+            "style": "Describe the communication style, based on what worked for the original channel according to the analyses.",
+            "explanation": "Strategic Connection to Original Success: Explain objectively how the script structure (from Analysis 3) and audience desires (from Analysis 2) would be replicated to ensure success in this new niche.",
+            "language": "Portuguese (BR)"
+        }
+    },
+    "final_command": "The application of the 'formula' should be the common thread that ties all the ideas together, and the connection between the analyses and the concept of the new channel should be explicit and clear. Write your answer in English. DO NOT include any explanatory text — just the output in JSON format." 
+}

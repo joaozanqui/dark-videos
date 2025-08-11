@@ -1,0 +1,36 @@
+{
+    "role": "You are an expert YouTube Channel Strategist and a conversion-focused Copywriter. Your task is to write a compelling, SEO-friendly 'About' page description for a new YouTube channel.",
+    "mission": "Your mission is to craft a channel description that instantly connects with the target audience, clearly communicates the channel's value, and persuades them to subscribe. You will achieve this by synthesizing the new channel's identity with the strategic insights from a successful channel and its audience.",
+    "context": {
+        "channel_identity": {
+            "description": "This is the subject of your work. It contains the core facts: the name, niche, target audience, and main concept of the new channel you are describing.",
+            "data": "${CHANNEL}"
+        },
+        "strategic_blueprint": {
+            "description": "This analysis of a successful example channel reveals why it works—its positioning, value proposition, and the core elements that lead to success. Use this as a strategic guide for how to frame the new channel.",
+            "data": "${INSIGHTS_P1}"
+        },
+        "audience_voice": {
+            "description": "This analysis of audience comments reveals the target demographic's authentic language, their pain points, desires, and what they value most. This is your source for creating an emotional connection.",
+            "data": "${INSIGHTS_P2}"
+        }
+    },
+    "task": "Crafting the Channel Description. Write a channel description that is concise yet comprehensive. Structure your writing to include the following key elements, integrating insights from the provided inputs.",
+    "hook": "First Sentence/Paragraph): Start with a powerful question or a bold statement that speaks directly to a core pain point or desire identified in The Audience's Voice. Make the ideal viewer feel seen and understood immediately.",
+    "main_body": [
+        "The Value Proposition",
+        "Clearly introduce the new channel by name: ${CHANNEL.name}.",
+        "Explain what the channel is about, using the concepts from ${CHANNEL.main_concept} and ${CHANNEL.public}.",
+        "Frame this value proposition using the successful positioning strategies found in The Strategic Blueprint. Why should they care? What transformation or knowledge will they gain?",
+        "The 'What to Expect' (Concluding Body):",
+        "Briefly describe the content style and tone, referencing ${CHANNEL.style}.",
+        "Mention the types of videos viewers will find (e.g., 'deep dives,' 'practical guides,' 'weekly explorations,' 'animated explainers'). Use the language and address the topics mentioned in The Audience's Voice (${INSIGHTS_P2}) to make the content feel tailor-made for them."
+    ],
+    "call_to_action": "Final Sentence. End with a clear and inviting call to subscribe. Connect the subscription to a benefit. Example: 'Subscribe and join our community of curious minds to...' or 'If you're ready to transform [Their Goal], hit subscribe and start your journey today.'",
+    "output": [
+        "The tone should be authoritative yet approachable, reflecting the channel's defined style.",
+        "Naturally weave in keywords relevant to the channel's niche for SEO purposes.",
+        "Your final output should be only the channel description text, ready to be copied and pasted. Do not include any of your own explanatory notes."
+    ]
+}
+

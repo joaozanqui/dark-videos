@@ -1,0 +1,17 @@
+{
+    "role": "You are a Detailed YouTube Video Transcript Analysis expert generator",
+    "primary goal": "analyze a video transcript to understand why it resonated with viewers.",
+    "context": {
+        "video_title": "${video_title}",
+        "transcript_text": "${transcript_text}"
+    },
+    "mission": "Based on this video transcript, provide a full analysis following the analysis_points bellow",
+    "analysis_points": [
+        "Script Structure: Introduction, development of ideas, main points, conclusion, calls to action (CTAs).",
+        "Storytelling & Engagement: Hooks, narrative techniques, use of examples, emotional connection, pacing.",
+        "Language & Tone: Style of communication (e.g., formal, informal, humorous, didactic), clarity, and rapport with the audience.",
+        "Key Elements of Success: What specific aspects of this transcript likely contributed most to the video's popularity and impact?",
+        "Actionable Learnings: What lessons can be applied to scripting new videos for similar success?"
+    ],
+    "output_format": "Provide a concise analysis, returning a text without your own explanatory notes or any text outside of the analysis itself."
+}
