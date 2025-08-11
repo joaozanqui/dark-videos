@@ -7,7 +7,9 @@ load_dotenv()
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
 PIXABAY_API_KEYS: list | None = json.loads(os.getenv("PIXABAY_API_KEYS")) if os.getenv("PIXABAY_API_KEYS") else None
-FINAL_VIDEOS_PATH: str | None = os.getenv("FINAL_VIDEOS_PATH")
+SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY: str | None = os.getenv("SUPABASE_ANON_KEY")
+DEVICE: int | None = os.getenv("DEVICE")
 
 MODEL_NAME = "gemini-2.0-flash"
 
@@ -27,6 +29,15 @@ if not GOOGLE_API_KEY:
 
 if not PIXABAY_API_KEYS:
     raise ValueError("PIXABAY_API_KEYS not found in .env file or environment variables.")
+
+if not SUPABASE_URL:
+    raise ValueError("SUPABASE_URL not found in .env file or environment variables.")
+
+if not SUPABASE_ANON_KEY:
+    raise ValueError("SUPABASE_ANON_KEY not found in .env file or environment variables.")
+
+if not DEVICE:
+    raise ValueError("DEVICE not found in .env file or environment variables.")
 
 try:
     if GEMINI_API_KEY:
