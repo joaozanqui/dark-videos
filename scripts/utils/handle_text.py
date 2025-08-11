@@ -70,9 +70,14 @@ def sanitize(text: str) -> str:
         )
     return text
 
-def sanitize_variables(variables: dict) -> dict:
+def sanitize_list(items):
+    for item in items:
+        item = sanitize(str(item))
+    return items
+
+def sanitize_dict(variables: dict) -> dict:
     return {
-        key: sanitize(value) if isinstance(value, str) else value
+        key: sanitize(value) if isinstance(value, str) else sanitize_list(value) if isinstance(value, list) else value
         for key, value in variables.items()
     }
 

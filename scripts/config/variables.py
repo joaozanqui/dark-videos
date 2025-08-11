@@ -213,7 +213,7 @@ def set_variables(phase1_insights, phase2_insights, phase3_insights, channel):
     
     for i, current in enumerate(VARIABLES):
         print(f"\t- {i+1}/{len(VARIABLES)}")
-        variables_to_generate = handle_text.sanitize_variables(current)
+        variables_to_generate = handle_text.sanitize_dict(current)
         prompt_variables['variables_dict'] = variables_to_generate
         prompt_variables['variables'] = handle_text.sanitize(str(variables_to_generate))
         current_variables = generate_variables(prompt_variables)

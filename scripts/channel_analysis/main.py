@@ -1,5 +1,3 @@
-import os
-
 from scripts.channel_analysis.youtube_client import (
     get_youtube_channel_data, 
     fetch_top_liked_comments,
@@ -16,7 +14,7 @@ from scripts.channel_analysis.gemini_analyzer import (
 import scripts.utils.gemini as gemini
 import scripts.database as database
 
-def transcripts_analysis(most_viewed_videos, channel_name, analysis_path):
+def transcripts_analysis(most_viewed_videos, channel_name):
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
     analysis = ''
@@ -24,22 +22,20 @@ def transcripts_analysis(most_viewed_videos, channel_name, analysis_path):
     for video in videos:
         transcripts = get_transcripts(video['video_id'])
         prompt_p3 = generate_phase3_prompt(transcripts, video['title'])
-        analysis += gemini.run(prompt_text=prompt_p3)
+        analysis += gemini.run(prompt_json=prompt_p3)
         analysis += "\n"
     
     prompt_p3 = generate_phase3_merge_prompt(analysis, most_viewed_videos_qty, channel_name)
-    insights_p3 = gemini.run(prompt_text=prompt_p3)
+    insights_p3 = gemini.run(prompt_json=prompt_p3)
     
     if not insights_p3:
         print("Failed to get insights from Phase 3.")
         return None
     
-    insights_p3_path = database.export('insights_p3', insights_p3, path=analysis_path)
-    print(f"Insights of Phase 3 (Transcripts Analysis) saved at {insights_p3_path}")
-    
+    print(f"Insights of Phase 3 (Transcripts Analysis) done!")    
     return insights_p3
     
-def comments_analysis(most_viewed_videos, analysis_path):    
+def comments_analysis(most_viewed_videos):    
     most_viewed_videos_qty = 20
     videos = most_viewed_videos[:most_viewed_videos_qty]
        
@@ -54,27 +50,24 @@ def comments_analysis(most_viewed_videos, analysis_path):
         comments_text += "\n"    
         
     prompt_p2 = generate_phase2_prompt(comments_text)
-    insights_p2 = gemini.run(prompt_text=prompt_p2)
+    insights_p2 = gemini.run(prompt_json=prompt_p2)
     
     if not insights_p2:
         print("Failed to get insights from Phase 2.")
         return None
     
-    insights_p2_path = database.export('insights_p2', insights_p2, path=analysis_path)
-    print(f"Insights of Phase 2 (Comments Analysis) saved at {insights_p2_path}")
-    
+    print(f"Insights of Phase 2 (Comments Analysis) done!")    
     return insights_p2
     
-def channel_analysis(channel_name, channel_description, videos_list, analysis_path):    
+def channel_analysis(channel_name, channel_description, videos_list):    
     prompt_p1 = generate_phase1_prompt(channel_name, channel_description, videos_list)
-    insights_p1 = gemini.run(prompt_text=prompt_p1)
+    insights_p1 = gemini.run(prompt_json=prompt_p1)
     
     if not insights_p1:
         print("Failed to get insights from Phase 1.")
         return None
     
-    insights_p1_path = database.export('insights_p1', insights_p1, path=analysis_path)
-    print(f"Insights of Phase 1 (Video Data Analysis) saved at {insights_p1_path}")
+    print(f"Insights of Phase 1 (Video Data Analysis) done!")
     return insights_p1
 
 def get_channel_data(channel_url):
@@ -95,37 +88,34 @@ def get_channel_data(channel_url):
     
     return youtube_data        
 
-def get_next_analysis():
-    default_folder = 'storage/analysis'
-    os.makedirs(default_folder, exist_ok=True)
-
-
-    analysis_folders = [
-        int(nome) for nome in os.listdir(default_folder)
-        if os.path.isdir(os.path.join(default_folder, nome)) and nome.isdigit()
-    ]
-    analysis_folders.sort()
-
-    next_analysis_id = analysis_folders[-1] + 1 if analysis_folders else 0
-    analysis_path = f"{default_folder}/{str(next_analysis_id)}/"
-    return [next_analysis_id, analysis_path]
+def select_channel():
+    channel_url = input("Paste the CHANNEL URL here.\n -> ")
+    return channel_url
 
 def run_full_analysis_pipeline():
-    analysis_id, analysis_path = get_next_analysis()
-    
     print("\n--- Step 1: Fetching YouTube Channel Data ---")
-    channel_url = database.get_input_channel_url()
+    channel_url = select_channel()
     youtube_data = get_channel_data(channel_url)
     channel_name, channel_description, videos_list = youtube_data
     most_viewed_videos = sorted(videos_list, key=lambda x: x["viewCount"], reverse=True)
     
     print("\n--- Phase 1: Initial Channel Analysis (using Gemini) ---")
-    insights_p1 = channel_analysis(channel_name, channel_description, videos_list, analysis_path)
+    insights_p1 = channel_analysis(channel_name, channel_description, videos_list)
     
     print("\n--- Phase 2: Comment Analysis (using Gemini) ---")
-    insights_p2 = comments_analysis(most_viewed_videos, analysis_path)
+    insights_p2 = comments_analysis(most_viewed_videos)
 
     print("\n--- Phase 3: Transcript Analysis (using Gemini) ---")
-    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name, analysis_path)
+    insights_p3 = transcripts_analysis(most_viewed_videos, channel_name)
 
-    return [insights_p1, insights_p2, insights_p3, analysis_id]
+    data = {
+        "channel_name": channel_name,
+        "channel_url": channel_url,
+        "insights_p1": insights_p1,
+        "insights_p2": insights_p2,
+        "insights_p3": insights_p3
+    }
+
+    database.insert(data, 'analysis')
+
+    return [insights_p1, insights_p2, insights_p3]
