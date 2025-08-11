@@ -1,35 +1,34 @@
 import json
 import scripts.database as database
 import scripts.utils.gemini as gemini
+import scripts.utils.inputs as inputs
 import re
-
-def is_preset_channel_config():
-    yes_or_no = input("Is there a channel idea preset?\n1 -> Yes\n2 -> No\n ->")
-    while yes_or_no != '1' and yes_or_no != '2':
-        yes_or_no = input("Please select a valid option\n ->")
     
-    return True if int(yes_or_no) == 1 else False 
+def get_video_duration():
+    duration = input("\t- Each video duration (minutes) -> ")
+    try:
+        return int(duration)
+    except Exception as e:
+        print(f"\t\t- Please provide a valid INTEGER number...")
+        return get_video_duration()
+    
 
-def new_channel_ideas_prompt(
-    phase1_insights: str,
-    phase2_insights: str,
-    phase3_insights: str,
-    language: str,
-) -> str :
+def new_channel_ideas_prompt(analysis: dict, language: str) -> str :   
     variables = {
-        "phase1_insights": phase1_insights,
-        "phase2_insights": phase2_insights,
-        "phase3_insights": phase3_insights,
+        "phase1_insights": analysis['insights_p1'],
+        "phase2_insights": analysis['insights_p2'],
+        "phase3_insights": analysis['insights_p3'],
         "language": language
     }
 
-    prompt_file = "preset-channel-idea.txt" if is_preset_channel_config() else "new-channels-ideas.txt"
-    return database.build_prompt('ideas', prompt_file, variables)
+    prompt_title = "preset-channel-idea" if inputs.yes_or_no(f"\t- Is there a channel idea preset?") else "new-channels-ideas"
+    return database.get_prompt_template('ideas', prompt_title, variables)
 
-def run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id):   
-    language = database.get_input_final_language()
-    prompt = new_channel_ideas_prompt(insights_p1, insights_p2, insights_p3, language)   
-    channels = gemini.run(prompt_text=prompt)
+def run(analysis):   
+    duration = get_video_duration()
+    language = inputs.select_from_data('languages')
+    prompt = new_channel_ideas_prompt(analysis, language['name'])   
+    channels = gemini.run(prompt_json=prompt)
     
     if not channels:
         print("Failed to generate channels ideas")
@@ -39,9 +38,11 @@ def run(insights_p1, insights_p2, insights_p3, analysis_id, next_channel_id):
         channels_clean = re.sub(r'^```json\n|```$', '', channels.strip())
         channels_json = json.loads(channels_clean)
         for channel in channels_json:
-            channel['id'] = int(next_channel_id)
-            channel['analysis'] = int(analysis_id)
-            next_channel_id += 1
+            channel['analysis_id'] = analysis['id'] 
+            channel['videos_duration'] = duration
+            channel['shorts_subtitles_position'] = 'top'
+            channel['language_id'] = language['id']
+            channel['upload_url'] = 'https://studio.youtube.com/channel/'
     except json.JSONDecodeError as e:
         print(f"Error decode JSON: {e}")
         return None
