@@ -7,11 +7,13 @@ import os
 import pyperclip
 import time
 
+ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
+
 def copy_image_to_right_path(final_path: str) -> Optional[Path]:
     try:        
         last_file = device.get_last_downloaded_file()
         ext = last_file.suffix.lstrip(".")
-        if not ext in database.ALLOWED_IMAGES_EXTENSIONS:
+        if not ext in ALLOWED_IMAGES_EXTENSIONS:
             ext = 'png'
 
         file_name = f"image.{ext}"
@@ -33,48 +35,40 @@ def copy_image_to_right_path(final_path: str) -> Optional[Path]:
 
 def run(channel_id):
     # https://www.freepik.com/pikaso/ai-image-generator
-    root = Path("storage/thought")
-    channels = database.get_channels()
+    channel = database.get_item('channels', channel_id)
+    titles = database.channel_titles(channel_id)
 
-    if not root.is_dir():
-        print(f"Error: No video generated.")
-        return
-    
-    channel_dir = Path(os.path.join(root, str(channel_id)))
+    print(f"Channel: '{channel['name']}'")
+    for title in titles:
+        video = database.get_item('videos', title['id'], column_to_compare='title_id')
+        if video['has_image']:
+            continue
 
-    print(f"Channel: '{channels[channel_id-1]['name']}'")
-    for video in sorted([p for p in channel_dir.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
-        if video.is_dir():
-            try:
-                last_file_before_download = device.get_last_downloaded_file()
+        final_path = f"storage/{channel_id}/{title['title_number']}"
+
+        try:
+            last_file_before_download = device.get_last_downloaded_file()
+            last_file = device.get_last_downloaded_file()
+
+            os.makedirs(final_path, exist_ok=True)
+
+            image_prompt = video['thumbnail_prompt']
+            print(f"{channel_id}/{title['title_number']}:\n{image_prompt}")
+            pyperclip.copy(image_prompt)
+
+            while last_file == last_file_before_download:
+                time.sleep(5)
                 last_file = device.get_last_downloaded_file()
+            
+            copied = copy_image_to_right_path(final_path)
+            
+            if not copied:
+                print("Error coping image...")
+                return None
+            
+            database.update('videos', video['id'], 'has_image', True)
+            print("Successful!\n\n")
 
-                final_path = f"storage/thought/{channel_id}/{video.name}"
-                os.makedirs(final_path, exist_ok=True)
-                image_files = [
-                    f for f in Path(final_path).iterdir() 
-                    if f.suffix.lstrip(".").lower() in database.ALLOWED_IMAGES_EXTENSIONS
-                ]
-
-                if image_files:
-                    continue
-
-                prompt_file_path = video / "thumbnail_prompt.txt"
-                image_prompt = prompt_file_path.read_text(encoding="utf-8").strip()
-                print(f"{channel_id}/{video.name}:\n{image_prompt}")
-                pyperclip.copy(image_prompt)
-
-                while last_file == last_file_before_download:
-                    time.sleep(5)
-                    last_file = device.get_last_downloaded_file()
-                
-                copied = copy_image_to_right_path(final_path)
-                
-                if not copied:
-                    print("Error coping image...")
-                    return None
-                print("Successful!\n\n")
-
-            except Exception as e:
-                print(f"Error {channel_id}/{video.name}: {e}")
+        except Exception as e:
+            print(f"Error {channel_id}/{title['title_number']}: {e}")
 

@@ -2,6 +2,7 @@ from PIL import ImageFont, ImageDraw, Image
 import textwrap
 import os 
 import scripts.database as database
+from scripts.images.main import ALLOWED_IMAGES_EXTENSIONS
 
 FONT_PATH = "assets/font.ttf"
 
@@ -73,10 +74,10 @@ def draw_thumbnail(background: Image.Image, expression: str, wrapped_text: str, 
 
     return background
 
-def has_image_file(default_path):
+def image_file_path(final_path):
     image_path = ''
-    for ext in database.ALLOWED_IMAGES_EXTENSIONS:
-        image_path = f"{default_path}/image.{ext}"
+    for ext in ALLOWED_IMAGES_EXTENSIONS:
+        image_path = f"{final_path}/image.{ext}"
         has_image = os.path.exists(image_path)
         if has_image:
             return image_path
@@ -84,14 +85,12 @@ def has_image_file(default_path):
     print(f"\t\t-No image file")
     return ''    
 
-def build(image_path: str, output_path: str, channel_id: str, title_id: str):
+def build(image_path: str, output_path: str, channel_id: str, thumbnail_data: dict):
     try:
         print(f"\t\t-Creating Thumbnail...")
         background = Image.open(image_path).convert("RGBA")
         width, height = background.size
 
-        thumbnail_data = database.get_thumbnail_data(channel_id, title_id)
-        
         text_area_width = int((width*0.75) * 0.9)
         text_area_height = int(height * 0.9)
         
@@ -112,23 +111,30 @@ def build(image_path: str, output_path: str, channel_id: str, title_id: str):
         thumbnail_image.save(output_path)
         print(f"\t\t-Thumbnail created successfully!")
 
+        return True
+
     except FileNotFoundError as fnfe:
         print(f"Error thumbnail image not found: {fnfe}")
+        return False
     except Exception as e:
         print(f"Error creating thumbnail: {e}")
+        return False
 
 def run(channel_id):
-    channel = database.get_channel_by_id(channel_id)
+    channel = database.get_item('channels', channel_id)
     print(f"- {channel['name']}")
-    titles = database.get_titles(channel_id)
+    titles = database.channel_titles(channel_id)
 
-    for title_id, title in enumerate(titles):
-        print(f"\t- {title_id}. {title['title']}")
+    for title in titles:
+        print(f"\t- {title['title_number']}. {title['title']}")
+        final_path = f"storage/{channel_id}/{title['title_number']}"
 
-        default_path = f"storage/thought/{channel_id}/{title_id}"
-        final_path = f"storage/videos/{channel_id}/{title_id}"
-        image_path = has_image_file(default_path)
-        if image_path:
+        video = database.get_item('videos', title['id'], column_to_compare='title_id')
+        if video['has_thumbnail']:
+            continue
+
+        if video['has_image']:
+            image_path = image_file_path(final_path)
             output_thumbnail_path = f"{final_path}/thumbnail.png"
-            if not os.path.exists(output_thumbnail_path):
-                build(image_path, output_thumbnail_path, channel_id, title_id)
+            if build(image_path, output_thumbnail_path, channel_id, video['thumbnail_data']):
+                database.update('videos', video['id'], 'has_thumbnail', True)
