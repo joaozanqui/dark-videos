@@ -2,13 +2,13 @@ import scripts.database as database
 import scripts.utils.handle_text as handle_text
 import scripts.utils.gemini as gemini
 
-def save_topics_variables(topics, video_duration):
+def save_topics_variables(topics: dict, video_duration: int, number_of_dev_topics: int):
     introduction = topics['introduction'][0]
     developments = topics['development']
     conclusion = topics['conclusion'][0]
     total_topics_qty = 3
-    introduction_and_conclusion_duration = video_duration / total_topics_qty
-    development_duration = video_duration * (2 / total_topics_qty)
+    introduction_and_conclusion_duration = video_duration / (total_topics_qty*2)
+    development_duration = (video_duration * 2) / (total_topics_qty * number_of_dev_topics)
 
     introduction_bullet_points = [
         introduction[key]
@@ -36,12 +36,31 @@ def save_topics_variables(topics, video_duration):
 
     return variables
 
-def initialize_chat(script_agent_prompt, script_template_prompt, variables):
+def validate(script, language, attempts, duration):
+    if attempts > 5:
+        return True
+    
+    if (len(script) > duration * 1500) or (len(script) < duration * 500):
+        database.log('full_script', script)
+        print(len(script))
+        print(duration)
+        print(duration * 1500)
+        print(f"\t\t\t- Wrong script duration (trying again)...")
+        return False
+    
+    is_text_correct = not handle_text.is_text_wrong(script, language)
+    
+    if not is_text_correct:
+        database.log('full_script', script)
+
+    return is_text_correct
+
+def initialize_chat(script_agent_prompt: str, script_template_prompt: dict, variables: dict):
     chat = gemini.new_chat(script_agent_prompt)
-    script_structure_prompt = script_template_prompt.safe_substitute(variables)
+    script_structure_prompt = handle_text.substitute_variables_in_json(script_template_prompt, variables)
 
     try:
-        chat.send_message(script_structure_prompt)
+        chat.send_message(str(script_structure_prompt))
     except Exception as e:
         print(f"Error initializing gemini chat: {e}")
         gemini.goto_next_model()
@@ -49,13 +68,18 @@ def initialize_chat(script_agent_prompt, script_template_prompt, variables):
 
     return chat
 
-def introduction_chat(chat, variables):
-    introduction_prompt = database.build_prompt('script', 'script_introduction', variables, send_as_json=True)   
-    last_response = chat.send_message(introduction_prompt)
-    
-    return last_response.text
+def introduction_chat(chat, variables, attempts=0):
+    introduction_prompt = database.get_prompt_template('script', 'script_introduction', variables)   
+    last_response = chat.send_message(str(introduction_prompt))
+    script = last_response.text
 
-def development_chat(chat, chapter, development_topics, variables):
+    if not validate(script, variables['LANGUAGE_AND_REGION'], attempts, variables['INTRODUCTION_DURATION']):
+        attempts += 1
+        return introduction_chat(chat, variables, attempts)
+    
+    return script
+
+def chapter_chat(chat, chapter, development_topics, variables, attempts=0):
     variables['DEVELOPMENT_CHAPTER_NUMBER'] = chapter + 1
     variables['DEVELOPMENT_TITLE'] = handle_text.sanitize(development_topics['title'])
     variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topics['subtopic_1'])
@@ -64,57 +88,61 @@ def development_chat(chat, chapter, development_topics, variables):
     variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topics['subtopic_4'])
     variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topics['subtopic_5'])
 
-    prompt = database.build_prompt('script', 'script_go_next_development', variables, send_as_json=True)   
-    last_response = chat.send_message(prompt)
-    return last_response.text
+    prompt = database.get_prompt_template('script', 'script_go_next_development', variables)   
+    last_response = chat.send_message(str(prompt))
+    script = last_response.text
+    
+    if not validate(script, variables['LANGUAGE_AND_REGION'], attempts, variables['DEVELOPMENT_DURATION']):
+        attempts += 1
+        return chapter_chat(chat, chapter, development_topics, variables)
+    
+    return script
 
-def conclusion_chat(chat, variables):
-    prompt = database.build_prompt('script', 'script_conclusion', variables, send_as_json=True)   
-    last_response = chat.send_message(prompt)
+def development_chat(chat, variables, attempts=0):
+    script = ''
+    for chapter, development_topics in enumerate(variables['DEVELOPMENTS']):
+        print(f"\t\t\t- Chapter {chapter+1}...")
+        chapter_script = chapter_chat(chat, chapter, development_topics, variables)        
+        script += chapter_script
+    
+    if not validate(script, variables['LANGUAGE_AND_REGION'], attempts, (variables['DEVELOPMENT_DURATION']*variables['NUMBER_OF_DEV_TOPICS'])):
+        attempts += 1
+        return development_chat(chat, variables, attempts)
+    
+    return script
 
-    return last_response.text
+def conclusion_chat(chat, variables, attempts=0):
+    prompt = database.get_prompt_template('script', 'script_conclusion', variables)   
+    last_response = chat.send_message(str(prompt))
 
-def chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts=0):
-    language = variables['LANGUAGE_AND_REGION']
+    script = last_response.text
+
+
+    if not validate(script, variables['LANGUAGE_AND_REGION'], attempts, variables['CONCLUSION_DURATION']):
+        attempts += 1
+        return conclusion_chat(chat, variables, attempts)
+
+    return script
+
+def chat_with_model(script_agent_prompt: str, script_template_prompt: dict, variables: dict, attempts=0):
     chat = initialize_chat(script_agent_prompt, script_template_prompt, variables)
     
     print(f"\t\t\t- Introduction...")
     introduction_script = introduction_chat(chat, variables)
-    if handle_text.is_text_wrong(introduction_script, language) and attempts <= 5:
-        attempts += 1
-        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
-    
-    development_script = ''
-    for chapter, development_topics in enumerate(variables['DEVELOPMENTS']):
-        print(f"\t\t\t- Chapter {chapter+1}...")
-        chapter_script = development_chat(chat, chapter, development_topics, variables)
-
-        if handle_text.is_text_wrong(chapter_script, language) and attempts <= 5:
-            attempts += 1
-            return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
-        
-        development_script += chapter_script
-    
+    print(f"\t\t\t- Development...")
+    development_script = development_chat(chat, variables)
     print(f"\t\t\t- Conclusion...")
     conclusion_script = conclusion_chat(chat, variables)
-    if handle_text.is_text_wrong(conclusion_script, language) and attempts <= 5:
-        attempts += 1
-        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts)
     
     full_script = introduction_script + "\n" + development_script + "\n" + conclusion_script
-
-    if len(full_script > variables['VIDEO_DURATION'] * 1500 or full_script < variables['VIDEO_DURATION'] * 500):
-        print(f"\t\t\t- Wrong script duration (trying again)...")
-        return chat_with_model(script_agent_prompt, script_template_prompt, variables, attempts=0)
 
     return full_script
 
 
-def run(variables, script_agent_prompt, channel_n, title_n, script_template_prompt):
-    topics_variables = save_topics_variables(variables['TOPICS'], variables['VIDEO_DURATION'])
+def run(variables: dict, script_agent_prompt: str, script_template_prompt: dict):
+    topics_variables = save_topics_variables(variables['TOPICS'], variables['VIDEO_DURATION'], variables['NUMBER_OF_DEV_TOPICS'])
     variables.update(topics_variables)
     
     full_script = chat_with_model(script_agent_prompt, script_template_prompt, variables)
 
-    database.export(f"full_script", full_script, path=f"storage/thought/{channel_n}/{title_n}/")        
     return full_script

@@ -2,6 +2,17 @@ import json
 import re
 import unicodedata
 import langid
+from string import Template
+
+def substitute_variables_in_json(data_structure, variables):
+    if isinstance(data_structure, dict):
+        return {k: substitute_variables_in_json(v, variables) for k, v in data_structure.items()}
+    elif isinstance(data_structure, list):
+        return [substitute_variables_in_json(i, variables) for i in data_structure]
+    elif isinstance(data_structure, str):
+        return Template(data_structure).safe_substitute(variables)
+    else:
+        return data_structure
 
 def refactor_dict(json_file):
     items = []
@@ -20,29 +31,33 @@ def format_json_response(response):
     if json_match:
         json_str = json_match.group(1)
     else:
-        start_index = response.find('[')
-        end_index = response.rfind(']')
-        if start_index != -1 and end_index != -1 and end_index > start_index:
-                json_str = response[start_index:end_index+1]
-        else:
-                json_str = response 
-                
-    try:
-        json_file = json.loads(json_str)
-        if isinstance(json_file, list): 
-            refactored_dict = refactor_dict(json_file)
-            return refactored_dict
-        elif isinstance(json_file, dict):
-            refactored_dict = refactor_dict([json_file])[0]
-            return refactored_dict
-        else:
-            print("  - Warning: LLM response for subject was not a JSON list.")
+        start_brace = response.find('{')
+        start_bracket = response.find('[')
 
-    except Exception as e:
-        print(f"\t\t\t - Error decoding JSON from subject response.: {e}") 
-        return ''
-    
-    return []
+        if start_brace == -1:
+            start_index = start_bracket
+        elif start_bracket == -1:
+            start_index = start_brace
+        else:
+            start_index = min(start_brace, start_bracket)
+
+        if start_index == -1:
+            json_str = response
+        else:
+            end_brace = response.rfind('}')
+            end_bracket = response.rfind(']')
+            end_index = max(end_brace, end_bracket)
+
+            if end_index > start_index:
+                json_str = response[start_index : end_index + 1]
+            else:
+                json_str = response
+
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        print(f"\t\t\t - Erro ao decodificar JSON: {e}")
+        return None
 
 def get_language_code(language_input: str) -> str | None:
     normalized_input = language_input.lower()
