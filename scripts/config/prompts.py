@@ -1,13 +1,15 @@
 import scripts.database as database
+import json
 
 def run(channel_id, step):
-    variables = database.get_variables(channel_id)
-    path = f"storage/prompts/{channel_id}/{step}/"
-    
-    topics_prompt = database.build_prompt(step, 'topics', variables, send_as_json=True)
-    script_prompt = database.build_prompt(step, 'script', variables, send_as_json=True)
+    variables = database.channel_variables(channel_id)
+    topics_prompt_str = database.get_prompt_template(step, 'topics', variables)
+    script_prompt_str = database.get_prompt_template(step, 'script', variables)
+    topics_prompt = json.loads(topics_prompt_str)
+    script_prompt = json.loads(script_prompt_str)
 
-    database.export('topics', topics_prompt, format='json', path=path)
-    database.export('script', script_prompt, format='json', path=path)
+    prompt_row = database.get_item('prompts', channel_id, column_to_compare='channel_id')
+    database.update('prompts', prompt_row['id'], f"{step}_topics", topics_prompt)
+    database.update('prompts', prompt_row['id'], f"{step}_script", script_prompt)
 
     return True
