@@ -5,7 +5,6 @@ from typing import List, Optional
 import scripts.utils.device as device
 from pydub import AudioSegment
 from pathlib import Path
-import os
 import shutil
 
 def copy_audio_to_right_path(file_name: str, path: str, audio_file: Path) -> Optional[Path]:
@@ -65,61 +64,52 @@ def merge_audio(audios_paths, final_path):
 
     return str(output_path)
 
+def download_audios(full_script, final_path):
+    automatic_download = True
+    
+    texts = divide_text(full_script)
+    texts_qty = len(texts)
+    audios_paths = []
+    for i, text in enumerate(texts):
+        print(f"\t\t-Audio {i+1}/{texts_qty}")
+        if automatic_download:
+            audio_file = capcut.run(text)
+        else:
+            pyperclip.copy(text)
+            input("--> Copy the text, generate the audio and save it at 'Downloads' folder.\n--> Press 'Enter' when the audio is in 'Downloads' dir")
+            audio_file = device.get_last_downloaded_file()
+        
+        audio = copy_audio_to_right_path(f"{i+1}", final_path, audio_file)
+        if not audio:
+            print("Error coping audio...")
+            return None
+        
+        audios_paths.append(audio)
+    
+    audio_path = merge_audio(audios_paths, final_path)
+    return audio_path
+
 def run(channel_id) -> Optional[Path]:
     # https://www.capcut.com/magic-tools/text-to-speech
-    automatic_download = True
-    path = Path("storage/thought")
-    channels = database.get_channels()
+    channel = database.get_item('channels', channel_id)
+    titles = database.channel_titles(channel_id)
 
-    if not path.is_dir():
-        print(f"Error: No video generated.")
-        return
+    print(f"Channel: '{channel['name']}'")
+    for title in titles:        
+        try:
+            video = database.get_item('videos', title['id'], column_to_compare='title_id')
+            if video['has_audio']:
+                continue
+            
+            final_path = f"storage/{channel['id']}/{title['title_number']}"    
+            print(f"\t-Video {title['title_number']}")
+            audio_path = download_audios(video['full_script'], final_path)
+            
+            database.update('videos', video['id'], 'has_audio', True)
+            print(f"Successful!: {audio_path}\n\n")
+        except Exception as e:
+            print(f"Error {channel['id']}/{title['title_number']}: {e}")
 
-    for channel in sorted(path.iterdir(), key=lambda p: int(p.name)):
-        if int(channel.name) != int(channel_id):
-            continue
-        
-        if channel.is_dir():
-            print(f"Channel: '{channels[int(channel.name)-1]['name']}'")
-            for video in sorted([p for p in channel.iterdir() if p.is_dir()],key=lambda p: int(p.name)):
-                if video.is_dir():
-                    try:
-                        final_path = f"storage/thought/{channel.name}/{video.name}"
-                        os.makedirs(final_path, exist_ok=True)
-
-                        audio_files = [
-                            f for f in Path(final_path).iterdir()
-                            if f.name == "audio.mp3"
-                        ]
-
-                        if audio_files:
-                            continue
-
-                        script_file_path = video / "full_script.txt"
-                        full_script = script_file_path.read_text(encoding="utf-8").strip()
-                        texts = divide_text(full_script)
-                        texts_qty = len(texts)
-                        audios_paths = []
-                        for i, text in enumerate(texts):
-                            print(f"\t-Video {video.name} - (Audio {i+1}/{texts_qty})")
-                            if automatic_download:
-                                audio_file = capcut.run(text)
-                            else:
-                                pyperclip.copy(text)
-                                input("--> Copy the text, generate the audio and save it at 'Downloads' folder.\n--> Press 'Enter' when the audio is in 'Downloads' dir")
-                                audio_file = device.get_last_downloaded_file()
-                                
-                            audio = copy_audio_to_right_path(f"{i+1}", final_path, audio_file)
-                            if not audio:
-                                print("Error coping audio...")
-                                return None
-                            
-                            audios_paths.append(audio)
-                        audio_path = merge_audio(audios_paths, final_path)
-                        print(f"Successful!: {audio_path}\n\n")
-                    except Exception as e:
-                        print(f"Error {channel.name}/{video.name}: {e}")
-    
     
     # capcut_generate_audio_page = 'https://www.capcut.com/magic-tools/text-to-speech'
     # texts = divide_text(full_text)
