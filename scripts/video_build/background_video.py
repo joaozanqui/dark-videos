@@ -41,10 +41,13 @@ def fetch_pixabay_videos_page(video_orientation, video_query, page=1, per_page=5
         "page": page
     }
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=60)
         response.raise_for_status() 
         data = response.json()
         return data.get("hits", [])
+    except requests.exceptions.Timeout:
+        print("\t\t\t- Error at Pixabay API (timeout). Try again later...")
+        return []
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to Pixabay API: {e}")
         return []
@@ -72,15 +75,25 @@ def next_pixabay_api_key():
     
     return PIXABAY_API_KEYS[PIXABAY_KEY]
 
+def select_random_page(all_pages, checked_pages):
+    available_pages = [page for page in all_pages if page not in checked_pages]
+    chosen_page = random.choice(available_pages)
+
+    return chosen_page
+
+
 def create_background_video(target_duration: float, temp_paths: list, video_orientation: str, video_query: str, target_resolution: tuple):
     clips = []
     total_duration = 0
-    page = 1
-    max_pages = 5
+    all_pages = [1, 2, 3, 4, 5]
+    checked_pages = [] 
+    page = select_random_page(all_pages, checked_pages)
+    checked_pages.append(page) 
+    
     DOWNLOAD_PAUSE_SECONDS = 5
     VIDEO_QUALITY = 'tiny'
 
-    while total_duration < target_duration and page <= max_pages:
+    while total_duration < target_duration and len(checked_pages) < len(all_pages):
         api_key = next_pixabay_api_key()
         hits = fetch_pixabay_videos_page(video_orientation, video_query, page=page, api_key=api_key)
         if not hits:
@@ -116,9 +129,11 @@ def create_background_video(target_duration: float, temp_paths: list, video_orie
                 
             except Exception as e:
                 print(f"Erro ao processar o vídeo {video_url}: {e}")
-
-        page += 1
-        if total_duration < target_duration and page <= max_pages:
+        
+        page = select_random_page(all_pages, checked_pages)
+        checked_pages.append(page) 
+        
+        if total_duration < target_duration and len(checked_pages) < len(all_pages):
             time.sleep(DOWNLOAD_PAUSE_SECONDS)
             
     return clips

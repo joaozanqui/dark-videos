@@ -1,8 +1,7 @@
 import whisper
-import re
-import json
 import scripts.database as database
 import scripts.utils.handle_text as handle_text
+import assets.main as assets
 import scripts.utils.gemini as gemini
 import os
 from moviepy.editor import AudioFileClip, concatenate_audioclips
@@ -10,10 +9,8 @@ import random
 
 def get_batch(batch, variables):
     variables['DATA'] = batch
-    prompt = database.build_prompt('build', 'expressions', variables)
-    prompt_json = json.loads(prompt)
-
-    response = gemini.run(prompt_json=prompt_json)
+    prompt = database.get_prompt_template('build', 'expressions', variables)
+    response = gemini.run(prompt_json=prompt)
 
     expressions_json = handle_text.format_json_response(response)
     if not expressions_json:
@@ -23,49 +20,17 @@ def get_batch(batch, variables):
     
     return expressions_json
 
-def expressions(channel_id, title_id, output_path, file_name='expressions', shorts=False, subtitles_filename='subtitles'):
-    expressions_file = f"{output_path}/{file_name}.json"
-    
-    if os.path.exists(expressions_file):
-        return database.get_expressions(channel_id, title_id, file_name=file_name, shorts=shorts)
-    
+def expressions(subtitles, channel_id, video_id):
     print("\t\t-Taking expressions...")
-    subtitles_srt = database.get_subtitles(channel_id, title_id, file_name=subtitles_filename, shorts=shorts)
-
-    pattern = re.compile(
-        r'(\d+)\s*\n'
-        r'(\d{2}:\d{2}:\d{2},\d{3})\s-->\s'
-        r'(\d{2}:\d{2}:\d{2},\d{3})\s*\n'
-        r'(.*?)(?=\n{2,}|\Z)',
-        re.DOTALL
-    )
-
-    subtitles_json = []
-    for match in pattern.finditer(subtitles_srt):
-        id = int(match.group(1))
-        start = match.group(2)
-        end = match.group(3)
-        text = match.group(4).strip().replace('\n', ' ')
-        
-        subtitles_json.append({
-            "id": id,
-            "start": start,
-            "end": end,
-            "text": text.replace("'", "")
-        })
-
-    allowed_expressions = database.get_assets_allowed_expressions(channel_id, is_video=True)
-    variables = {
-        "ALLOWED_EXPRESSIONS": allowed_expressions
-    }
+    variables = {"ALLOWED_EXPRESSIONS": assets.get_allowed_expressions(channel_id, is_video=True)}
 
     all_expressions = []
     max_expressions_per_run = 100
-    subtitles_qty = len(subtitles_json)
+    subtitles_qty = len(subtitles)
     try:
         for i in range(0, subtitles_qty, max_expressions_per_run):
             bigest_id = i + max_expressions_per_run
-            batch = subtitles_json[i:bigest_id]
+            batch = subtitles[i:bigest_id]
             expressions_json = get_batch(batch, variables)
 
             all_expressions.extend(expressions_json)
@@ -73,22 +38,14 @@ def expressions(channel_id, title_id, output_path, file_name='expressions', shor
     except Exception as e:
         print(f"\t\t\tError taking expressions: {e}")
         print(f"\t\t\tTrying again...")
-        return expressions(channel_id, title_id, output_path, file_name=file_name)
+        return expressions(subtitles, channel_id, video_id)
     
     for expression in all_expressions:
-        subtitles_json[expression['id']-1]['expression'] = expression['expression']
+        subtitles[expression['id']-1]['expression'] = expression['expression']
 
-    database.export(file_name, subtitles_json, 'json', f"{output_path}/")
-    return subtitles_json
+    return database.update('videos', video_id, 'expressions', subtitles)
 
-def subtitles(audio_path, channel_id, title_id, subtitles_path, shorts=False, file_name='subtitles'):   
-    subtitles_file = f"{subtitles_path}/{file_name}.srt"
-    
-    if os.path.exists(subtitles_file):
-        return database.get_subtitles(channel_id, title_id, file_name=file_name, shorts=shorts)
-    
-    channel = database.get_channel_by_id(channel_id)
-    language = channel['language']
+def subtitles(audio_path, language, id):   
     print("\t\t-Generating subtitles...")
 
     model = whisper.load_model("medium")
@@ -103,8 +60,7 @@ def subtitles(audio_path, channel_id, title_id, subtitles_path, shorts=False, fi
                     # fp16=False  
                     verbose=False
                 )   
-        database.export(file_name, result["segments"], format='srt', path=f"{subtitles_path}/")
-        return database.get_subtitles(channel_id, title_id, file_name=file_name, shorts=shorts)
+        return database.update('videos', id, 'subtitles', result["segments"])
     
     except Exception as e:
         print(f"Subtitles error: {e}")

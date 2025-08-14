@@ -13,10 +13,15 @@ def run(expressions_path, subtitles_with_expressions, duration, position_h=-200,
 
     for entry in subtitles_with_expressions:
         expression_name = entry["expression"]
-        start = parse_srt_time(entry["start"])
-        end = parse_srt_time(entry["end"])
-        image_duration = end - start
+        
+        start = entry["start"]
+        if isinstance(start, str):
+            start = parse_srt_time(start)
+        end = entry["end"]
+        if isinstance(end, str):
+            end = parse_srt_time(end)
 
+        image_duration = end - start
         image_path = os.path.join(expressions_path, f"{expression_name}.png")
         if not os.path.exists(image_path):
             image_path = os.path.join(expressions_path, f"serious.png")
