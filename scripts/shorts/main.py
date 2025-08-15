@@ -14,117 +14,98 @@ import gc
 import json
 import os
 
-def prompt_variables(channel_id, title_id, video_title):
-    variables = database.get_variables(channel_id)
-    topics_json = database.get_topics(channel_id, title_id)
-    topics = handle_text.sanitize(json.dumps(topics_json['introduction'], indent=2, ensure_ascii=False))
-    channel = database.get_channel_by_id(channel_id)
+def prompt_variables(video, channel, title):
+    variables = database.channel_variables(channel['id'])
     
     return {
-        "VIDEO_TITLE": handle_text.sanitize(video_title['title']),
-        "RATIONALE": handle_text.sanitize(video_title['rationale']),
-        "DESCRIPTION": handle_text.sanitize(database.get_video_description(channel_id, title_id)),
-        "FULL_SCRIPT": handle_text.sanitize(database.get_full_script(channel_id, title_id)),
+        "VIDEO_TITLE": handle_text.sanitize(title['title']),
+        "RATIONALE": handle_text.sanitize(title['rationale']),
+        "DESCRIPTION": handle_text.sanitize(video['description']),
+        "FULL_SCRIPT": handle_text.sanitize(video['full_script']),
         "LANGUAGE": handle_text.sanitize(variables['LANGUAGE_AND_REGION']),
-        "TOPICS": handle_text.sanitize(topics),
+        "TOPICS": handle_text.sanitize(json.dumps(video['topics'], indent=2, ensure_ascii=False)),
         "CHANNEL_NAME": handle_text.sanitize(channel['name']),
+        "SHORTS_QTY": channel['video_shorts_qty']
     }
 
 def audios(channel_id):
-    titles = database.get_titles(channel_id)
-    for title_id, title in enumerate(titles):
-        print(f"\t-({channel_id}/{title_id}) {title['title']}")
-        shorts_path = f"storage/shorts/{channel_id}/{title_id}"
-        scripts = []
-        if os.path.exists(shorts_path):
-            for filename in os.listdir(shorts_path):
-                if filename.endswith(".txt"):
-                    scripts.append(filename)
+    titles = database.channel_titles(channel_id)
+    for title in titles:
+        final_path = f"storage/{channel_id}/{title['title_number']}"
+        video = database.get_item('videos', title['id'], 'title_id')
         
-        scripts.sort()
-        for script_file in scripts:
-            script_name = script_file.split('.')[0]
-            script_path = f"{shorts_path}/{script_file}"
-            
-            output_audio_path = f"{shorts_path}/{script_name}.mp3"
-            if database.exists(output_audio_path):
+        print(f"\t-({channel_id}/{title['title_number']}) {title['title']}")
+        all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
+
+        for shorts in all_shorts:
+            if shorts['has_audio']:
                 continue
-
-            script = database.get_txt_data(script_path)
-
-            audio_file = capcut.run(script)
-            audio_path = copy_audio_to_right_path(script_name, shorts_path, audio_file)
+            audio_file = capcut.run(shorts['full_script'])
+            shorts_name = f"shorts_{shorts['number']}"
+            audio_path = copy_audio_to_right_path(shorts_name, final_path, audio_file)
 
             if not audio_path:
                 print("Error coping audio...")
                 return None
             
+            database.update('shorts', shorts['id'], 'has_audio', True)
             print(f"\t\t- Successful!: {audio_path}")
 
-def build_infos(channel_id, title_id, title, script_name, final_path):
-    ideas = database.get_shorts_ideas(channel_id, title_id)
-    variables = prompt_variables(channel_id, title_id, title)
-
-    script_id = script_name.split('_')[1]
-    full_script = database.get_full_script(channel_id, title_id, file_name=script_name, shorts=True)
-    idea = next((idea for idea in ideas if int(idea['id']) == int(script_id)), None)
+def build_infos(video, channel, title, shorts):
+    variables = prompt_variables(video, channel, title)    
+    idea = next((idea for idea in video['shorts_ideas'] if idea['id'] == shorts['number']), None)
+    
     if idea:
-        description = get_description(full_script, idea, variables)
-        database.export(f"{script_name}_description", description, path=f"{final_path}/")
+        description = get_description(shorts['full_script'], idea, variables)
+        database.update('shorts', shorts['id'], 'description', description)
 
 def build(channel_id):
-    music_mood = "calm"
-    channel = database.get_channel_by_id(channel_id)
+    channel = database.get_item('channels', channel_id)
     subtitles_top = channel['shorts_subtitles_position'] == 'top'
 
     print(f"- {channel['name']}")
-    titles = database.get_titles(channel_id)
+    titles = database.channel_titles(channel_id)
 
-    for title_id, title in enumerate(titles):
-        final_path = f"storage/videos/{channel_id}/{title_id}"
-        shorts_path = f"storage/shorts/{channel_id}/{title_id}"
+    for title in titles:
+        video = database.get_item('videos', title['id'], 'title_id')
+        final_path = f"storage/{channel_id}/{title['title_number']}"
         
-        print(f"\t-({channel_id}/{title_id}) {title['title']}")
+        print(f"\t-({channel_id}/{title['title_number']}) {title['title']}")
+        all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
+        sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
 
-        scripts = []
-        if os.path.exists(shorts_path):
-            for filename in os.listdir(shorts_path):
-                if filename.endswith(".mp3"):
-                    scripts.append(filename)
-        
-        scripts.sort()
-        for script_file in scripts:
-            script_name = script_file.split('.')[0]
-
-            print(f"\t- {script_name}")
-            audio_path = f"{shorts_path}/{script_name}.mp3"
-            output_video_path = f"{final_path}/{script_name}.mp4"
-            output_text_path = f"{final_path}/{script_name}_description.txt"
-
-            if database.exists(output_video_path):
-                if not database.exists(output_text_path):
-                    build_infos(channel_id, title_id, title, script_name, final_path)
+        for shorts in sorted_shorts:
+            if shorts['generated_device']:
+                if not shorts['description']:
+                    build_infos(video, channel, title, shorts)
                 continue
-        
+
+            print(f"\t- Shorts {shorts['number']}...")
+
+            shorts_name = f"shorts_{shorts['number']}"
+            audio_path = f"{final_path}/{shorts_name}.mp3"
+            language = database.get_item('languages', channel['language_id'])
+
+            if not shorts['subtitles']:
+                shorts['subtitles'] = generate.subtitles(audio_path, language['name'], shorts['id'], table='shorts')
+            if not shorts['expressions']:
+                shorts['expressions'] = generate.expressions(shorts['subtitles'], channel['id'], shorts['id'], table='shorts')
+
             narration_audio = AudioFileClip(audio_path)
-            background_music = generate.music(audio_duration=narration_audio.duration ,mood=music_mood)
-            subtitles_filename = f"{script_name}_subtitles"
-            subtitles_srt = generate.subtitles(audio_path, channel_id, title_id, shorts_path, shorts=True, file_name=subtitles_filename)
-            subtitles_with_expressions = generate.expressions(channel_id, title_id, shorts_path, file_name=f"{script_name}_expressions", shorts=True, subtitles_filename=subtitles_filename)
-            subtitles = video_build.fix_subtitles_time(subtitles_with_expressions)
-
+            background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
             background_video_composite = background_video.run(narration_audio.duration, video_orientation='vertical', target_resolution=(1080, 1920))
+            
+            subtitles = video_build.fix_subtitles_time(shorts['expressions'])
             expressions_path = f"assets/expressions/{channel_id}/chroma"
-            expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration, position_h='center', position_v='center', expressions_size=1.9)
-
+            expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration, position_h='center', position_v='center', expressions_size=1.9)            
             try:
                 audio = video_build.create_audio(narration_audio, background_music)
                 subtitles_h = 10 if subtitles_top else 1.5
                 subtitles_w = 100
-                database.export('subtitles_srt', subtitles_srt)
-                video = video_build.create_video(background_video_composite, expressions_images_composite, subtitles_srt, subtitles_padding=0.98, subtitles_denominators=(subtitles_w, subtitles_h))
-                video_build.render_video(audio, video, output_video_path)
-                build_infos(channel_id, title_id, title, script_name, final_path)
+                video_composite = video_build.create_video(background_video_composite, expressions_images_composite, shorts['subtitles'], subtitles_padding=0.98, subtitles_denominators=(subtitles_w, subtitles_h))
+                video_build.render_video(audio, video_composite, final_path, shorts_name)
+                build_infos(video, channel, title, shorts)
+                database.update('shorts', shorts['id'], 'generated_device', database.DEVICE)
             finally:
                 print("\t- Cleaning up memory before next iteration...")
                 collected_objects = gc.collect()
@@ -134,24 +115,22 @@ def build(channel_id):
 
 def run(channel_id):
     print("--- Building Shorts ---\n")
-    channel = database.get_channel_by_id(channel_id)
+    channel = database.get_item('channels', channel_id)
 
     print(f"- {channel['name']}")
-    titles = database.get_titles(channel_id)
+    titles = database.channel_titles(channel_id)
 
-    for title_id, title in enumerate(titles):
-        print(f"\t-({channel_id}/{title_id}) {title['title']}")
-        shorts_path = f"storage/shorts/{channel_id}/{title_id}/"
-    
-        variables = prompt_variables(channel_id, title_id, title)
-        shorts_ideas = ideas.run(shorts_path, variables)
+    for title in titles:
+        print(f"\t-({channel_id}/{title['title_number']}) {title['title']}")
+        video = database.get_item('videos', title['id'], 'title_id')
+        final_path = f"storage/{channel['id']}/{title['title_number']}"
+
+        variables = prompt_variables(video, channel, title)
+        video['shorts_ideas'] = ideas.run(video, variables)
         
         print("\t\t- Generating Shorts Scripts...")
-        shorts_scripts = []
-        for idea in shorts_ideas:
-            variables['SHORTS_IDEA_JSON'] = idea
-            script = generate_script.run(shorts_path, variables)
-            shorts_scripts.append(script)
+        for idea in video['shorts_ideas']:
+            generate_script.run(video, idea, variables, final_path)
 
         print("\t\t- Done!")
         

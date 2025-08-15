@@ -6,10 +6,8 @@ import scripts.video_build.background_video as background_video
 import scripts.video_build.expressions_images as expressions_images
 import gc
 import scripts.database as database
-import srt
 
-def render_video(audio, video, final_path):       
-    file_name = "video"
+def render_video(audio, video, final_path, file_name='video'):       
     output_path = f"{final_path}/{file_name}.mp4"
 
     video.audio = audio
@@ -134,21 +132,6 @@ def build_video(final_path, channel, video, language):
     video = create_video(background_video_composite, expressions_images_composite, video['subtitles'], intro_file=intro_file)
     render_video(audio, video, final_path)
 
-def save_infos(final_path, description, title_text):
-    file_name = "infos"
-    if os.path.exists(f"{final_path}/{file_name}.txt"):
-        return
-    try:
-        print("\t\t-Saving infos...")
-        infos = f"{title_text}\n\n{description}"
-        database.export(file_name, infos, path=f"{final_path}/")
-        print("\t\t-Done!")
-        
-    except Exception as e:
-        print(f"\t\t-Error saving infos: {e}")
-
-    return   
-
 def run(channel_id):
     collected_objects = gc.collect()
     print("--- Building Videos ---\n")
@@ -165,8 +148,6 @@ def run(channel_id):
         if not video['has_audio'] or not video['description']:
             continue
         
-        save_infos(final_path, video['description'], title['title'])
-
         if video['generated_device']:
             device = database.get_item('devices', video['generated_device'])
             print(f"\t\t-Video file already exists in device '{device['name']}'!")

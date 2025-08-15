@@ -3,28 +3,36 @@ from scripts.shorts.utils import generate
 import scripts.utils.handle_text as handle_text
 import json
 
-def run(path, variables):
-    prompt_file_name = f"shorts_script"
-   
-    file_name = f"shorts_{variables['SHORTS_IDEA_JSON']['id']}"
-    file_path = f"{path}{file_name}.txt"
+def last_shorts_number(video):
+    all_shorts = database.get_data('shorts', video['id'], 'video_id')
+    if not all_shorts:
+        return 0
     
-    variables['SHORTS_IDEA_TITLE'] = variables['SHORTS_IDEA_JSON']['main_title']
-    variables['SHORTS_IDEA'] = handle_text.sanitize(json.dumps(variables['SHORTS_IDEA_JSON'], indent=2, ensure_ascii=False))
+    sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
+    return sorted_shorts[-1]['number']
 
-    if database.exists(file_path):
-        return database.get_txt_data(file_path)
-    
+def run(video, idea, variables, final_path):
+    if last_shorts_number(video) >= variables['SHORTS_QTY']:
+        return
+
+    variables['SHORTS_IDEA_TITLE'] = idea['main_title']
+    variables['SHORTS_IDEA'] = handle_text.sanitize(json.dumps(idea, indent=2, ensure_ascii=False))
+
     try:
-        print(f"\t\t\t- {file_name}...")
-        script = generate(variables, prompt_file_name)
+        print(f"\t\t\t- Shorts {idea['id']}...")
+        script = generate(variables, file_name='shorts_script')
         if handle_text.is_text_wrong(script, variables['LANGUAGE']):
             print(f"\t\t\t- Shorts Script generated with errors!\n\t\t\t- trying again...")
-            return run(path, variables)
+            return run(idea, variables, final_path)
         
-        database.export(file_name, script, path=path)
+        shorts_data = {
+            "video_id": video['id'],
+            "number": idea['id'],
+            "full_script": script,
+        }
         
-        return script
+        database.insert(shorts_data, 'shorts')
+        return
     except Exception as e:
         print(f"\t\t-Error to get shorts script: {e}")
-        return run(path, variables)
+        return run(video, idea, variables, final_path)
