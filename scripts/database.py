@@ -1,11 +1,13 @@
-import json
+from supabase import create_client, Client
+from config.config import SUPABASE_ANON_KEY, SUPABASE_URL, DEVICE
 import os
-from string import Template
+import json
 import scripts.utils.handle_text as handle_text
 
-ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
+db: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-def export(file_name: str, data: str|list, format='txt', path='storage/') -> str:
+
+def export(file_name: str, data: str|list|dict, format='txt', path='storage/') -> str:
     try:
         if path[-1] != '/':
             path += '/'
@@ -15,18 +17,6 @@ def export(file_name: str, data: str|list, format='txt', path='storage/') -> str
         with open(export_path, 'w', encoding='utf-8') as f:
             if format == 'json':
                 json.dump(data, f, ensure_ascii=False, indent=4)
-            elif format == 'srt':
-                for i, segment in enumerate(data):
-                    start_time = segment['start']
-                    end_time = segment['end']
-                    text = segment['text'].strip()
-
-                    start_subtitiles = f"{int(start_time//3600):02}:{int(start_time%3600//60):02}:{int(start_time%60):02},{int(start_time%1*1000):03}"
-                    end_subtitles = f"{int(end_time//3600):02}:{int(end_time%3600//60):02}:{int(end_time%60):02},{int(end_time%1*1000):03}"
-
-                    f.write(f"{i + 1}\n")
-                    f.write(f"{start_subtitiles} --> {end_subtitles}\n")
-                    f.write(f"{text}\n\n")
             else:
                 f.write(data)
         
@@ -35,189 +25,133 @@ def export(file_name: str, data: str|list, format='txt', path='storage/') -> str
         print(f"Error exporting {file_name}: {e}")
         return None
 
-def exists(file):
-    return os.path.exists(file)
+def log(file_name: str, data: str|list|dict, format='txt'):
+    export(file_name, data, format, path='storage/logs')
 
-def get_json_data(path):
-    if not exists(path):
+def has_file(file_path):
+    return os.path.exists(file_path)
+
+def get_prompt_template(prompt_type, file_name, variables):
+    response_data = (
+        db.table('prompts_templates')
+        .select("*")
+        .eq('type', prompt_type)
+        .eq('name', file_name)
+        .execute()
+        .data
+    )
+
+    if not response_data:
+        raise ValueError(f"Nenhum template encontrado para type='{prompt_type}' e name='{file_name}'")
+    
+    prompt_template_obj = response_data[0]
+
+    prompt_obj = handle_text.substitute_variables_in_json(prompt_template_obj, variables)
+
+    final_prompt_string = json.dumps(prompt_obj['prompt'], indent=2, ensure_ascii=False)
+    
+    return final_prompt_string
+
+def get_prompt_file(channel_id, prompt_type):
+    prompt = get_item('prompts', channel_id, 'channel_id', select=prompt_type)
+
+    return prompt
+
+def update(table, id, column, value):
+    data = (
+        db.table(table)
+        .update({column: value})
+        .eq("id", id)
+        .execute()
+        .data
+    )
+
+    if data:
+        return data[0][column]
+    
+    return None
+
+def insert(data, table=''):     
+    item = (
+        db.table(table)
+        .insert(data)
+        .execute()
+        .data
+    )
+
+    return item[0]
+
+def get_item(table, value=None, column_to_compare='id', select="*"):
+    item = (
+        db.table(table)
+        .select(select)
+        .eq(column_to_compare, value)
+        .execute()
+        .data
+    )
+    
+    if not item:
         return []
+
+    if select != "*":
+        return item[0][select]
     
-    with open(path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-    
+    return item[0]
+
+def get_all_data(table, select="*"):
+    data = (
+        db.table(table)
+        .select(select)
+        .execute()
+        .data
+    )
+
     return data
 
-def get_txt_data(path):
-    if not exists(path):
-        return []
+def get_data(table, value=None, column_to_compare='id',select="*"):
+    item = (
+        db.table(table)
+        .select(select)
+        .eq(column_to_compare, value)
+        .execute()
+        .data
+    )
     
-    with open(path, "r", encoding="utf-8") as file:
-        data = file.read()
+    if select != "*":
+        return item[select]
     
-    return data
+    return item
 
-def get_titles(channel_id):
-    path = f"storage/ideas/titles/{str(channel_id)}.json"
-    titles = get_json_data(path)
+def exists(table, value=None, column_to_compare='id'):
+    items = (
+        db.table(table)
+        .select('id', count='exact', head=True)
+        .eq(column_to_compare, value)
+        .execute()
+    )
 
+    return items.count > 0
+
+def channel_titles(channel_id):     
+    titles = get_data('titles', channel_id, column_to_compare='channel_id')   
+    
     return titles
 
-def get_channels():
-    path = "storage/ideas/channels.json"
-    channels = get_json_data(path)
+def title_channel(title_id):     
+    title = get_item('titles', title_id)
+    channel = get_item('channels', title['channel_id'])
 
-    return channels
+    return channel
 
-def get_input_data():
-    path = 'config/data.json'
-    data = get_json_data(path)
+def next_title_number(channel_id):
+    titles = channel_titles(channel_id)
     
-    return data
+    if not titles:
+        return 1
 
-def get_variables(channel_id):
-    path = f"storage/thought/{str(channel_id)}/variables.json"
-    variables = get_json_data(path)
-    
-    return handle_text.sanitize_variables(variables)
+    highest_number = max(item['title_number'] for item in titles)
+    return highest_number
 
-def get_analysis(analysis_id, phase):
-    path = f'storage/analysis/{str(analysis_id)}/insights_p{str(phase)}.txt'
-    insights = get_txt_data(path)
-    
-    return insights
-
-def get_topics(channel_id, title_id):
-    path = f"storage/thought/{str(channel_id)}/{str(title_id)}/topics.json"
-    topics = get_json_data(path)
-    
-    return topics
-
-def get_full_script(channel_id, title_id, file_name='full_script', shorts=False):
-    middle_path = "shorts" if shorts else "thought" 
-    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.txt"
-    full_script = get_txt_data(path)
-    
-    return full_script
-
-def get_prompt_template(step, file):
-    txt_steps = [
-        'ideas',
-        'analysis'
-    ]
-    
-    format = 'txt' if step in txt_steps else 'json'
-    path = f"default_prompts/{str(step)}/{str(file)}.{format}"
-    prompt = get_txt_data(path)
-    
-    return prompt
-
-def build_prompt(step, file_name, variables, send_as_json=False):
-    sanitized_variables = handle_text.sanitize_variables(variables)
-    prompt_template = get_prompt_template(step, file_name)
-    template = Template(prompt_template)
-    prompt = template.safe_substitute(sanitized_variables)
-
-    if send_as_json:
-        prompt_json = json.loads(prompt)
-        prompt = json.dumps(prompt_json, indent=2, ensure_ascii=False)
-    
-    return prompt
-
-def get_prompt_file(channel_id, step='', file=''):
-    if not file:
-        return ''
-    
-    path = f"storage/prompts/{str(channel_id)}/{step}{'/' if step else ''}{str(file)}.json"
-    prompt = get_txt_data(path)
-    
-    return prompt
-
-def get_subtitles(channel_id, title_id, file_name='subtitles', shorts=False):
-    middle_path = "shorts" if shorts else "thought" 
-    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.srt"
-    subtitles = get_txt_data(path)
-    
-    return subtitles
-
-def get_expressions(channel_id, title_id, file_name='expressions', shorts=False):
-    middle_path = "shorts" if shorts else "thought" 
-    path = f"storage/{middle_path}/{channel_id}/{title_id}/{file_name}.json"
-    expressions = get_json_data(path)
-    
-    return expressions
-
-def get_video_description(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/description.txt"
-    description = get_txt_data(path)
-
-    return description
-
-def get_thumbnail_data(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/thumbnail_data.json"
-    data = get_json_data(path)
-    
-    return data
-
-def get_thumbnail_prompt(channel_id, title_id):
-    path = f"storage/thought/{channel_id}/{title_id}/thumbnail_prompt.txt"
-    prompt = get_txt_data(path)
-    
-    return prompt
-
-def get_channel_by_id(channel_id):
-    channels = get_channels()
-    return channels[int(channel_id)-1]
-
-def update_channels(channel):
-    channels = get_channels()
-    for index, current_channel in enumerate(channels):
-        if current_channel.get('id') == channel['id']:
-            channels[index] = channel
-            break
-    
-    export('channels', channels, format='json', path='storage/ideas/')
-    return channels
-
-def get_input_final_language():
-    data = get_input_data()
-    language = data['final_language']
-
-    if not language:
-        language = 'english'
-
-    return language
-
-def get_input_video_duration():
-    data = get_input_data()  
-    duration = data['duration']
-
-    if not duration:
-        duration = 20
-
-    return duration
-
-def get_input_channel_url():
-    data = get_input_data()    
-    channel_url_or_id = data['channel_to_copy']
-
-    if not channel_url_or_id:
-        print("No channel URL or ID provided. Exiting.")
-        return None
-
-    return channel_url_or_id
-
-def get_assets_allowed_expressions(channel_id, is_video=False):
-    path = f"assets/expressions/{str(channel_id)}/{'chroma' if is_video else 'transparent'}"
-    allowed_expressions = []
-    for expression in os.listdir(path):
-        full_path = os.path.join(path, expression)
-        if os.path.isfile(full_path):
-            allowed_expressions.append(expression.split('.')[0])
-    
-    return allowed_expressions
-
-def get_shorts_ideas(channel_id, title_id):
-    path = f"storage/shorts/{str(channel_id)}/{str(title_id)}/shorts_ideas.json"
-    ideas = get_json_data(path)
-    
-    return ideas
+def channel_variables(channel_id):
+    variables = get_item('channels_responses', channel_id, column_to_compare='channel_id', select='variables')
+    return variables

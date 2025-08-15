@@ -11,58 +11,7 @@ import scripts.video_build.main as video_build
 import scripts.upload.main as upload
 import scripts.shorts.main as shorts
 import scripts.database as database
-import os
-import re
-
-def select_analysed_channel():
-    analysis_path = "storage/analysis"
-
-    analysis_folders = []
-    for analysis in os.listdir(analysis_path):
-        full_path = os.path.join(analysis_path, analysis)
-        if os.path.isdir(full_path):
-            analysis_folders.append(analysis) 
-    analysis_folders.sort()
-
-    channels = []
-    for analysis_id in analysis_folders:
-        insights_p1 = database.get_analysis(analysis_id, 1)
-        first_line = insights_p1.splitlines()[0]
-        match = re.search(r"(?<!here)s?'(.*?)'", first_line, re.IGNORECASE)
-        if not match:
-            match = re.search(r'(?<!here)s?"(.*?)"', first_line, re.IGNORECASE)
-
-        channel = match.group(1) if match else f"Channel {analysis_id}"
-        channels.append(channel)
-
-    max = 0
-    print("\n\nAnalysed Channels:\n")
-    for i, channel in enumerate(channels):
-        print(f"{i+1} - {channel}")
-        max = i+1
-    action = 0
-    while action < 1 or action > max:
-        action = int(input(f"\t-> "))
-    
-    return str(action-1)
-
-
-def select_channel():
-    channels = database.get_channels()
-    
-    max = 0
-    print("\n\nChannels:\n")
-    for i, channel in enumerate(channels):
-        print(f"{i+1} - {channel['name']}")
-        max = i+1
-
-    action = 0
-    while action < 1 or action > max:
-        action = int(input(f"\t-> "))
-    
-    channel_id = action-1
-    channel_chosen = channels[channel_id]
-    return channel_chosen
+import scripts.utils.inputs as inputs
 
 def run_process():
     actions = [
@@ -95,25 +44,18 @@ def run_process():
         channel_analysis.run_full_analysis_pipeline()
     else:        
         if action == 2:
-            analysis_id = select_analysed_channel()
-            insights_p1 = database.get_analysis(analysis_id, 1)
-            insights_p2 = database.get_analysis(analysis_id, 2)
-            insights_p3 = database.get_analysis(analysis_id, 3)
-
-            ideas.run(insights_p1, insights_p2, insights_p3, analysis_id)
+            analysis = inputs.select_from_data('analysis')
+            ideas.run(analysis)
         else:
-            channel = select_channel()           
-            analysis_id = channel['analysis']
-
-            insights_p1 = database.get_analysis(analysis_id, 1)
-            insights_p2 = database.get_analysis(analysis_id, 2)
-            insights_p3 = database.get_analysis(analysis_id, 3)
+            channel = inputs.select_from_data('channels')           
+            analysis_id = channel['analysis_id']
+            analysis = database.get_item('analysis', value=analysis_id)
 
             if action == 3:
-                handle_variables.run(channel, insights_p1, insights_p2, insights_p3)
+                handle_variables.run(channel, analysis)
             else:
                 if action == 4:
-                    titles.build_title_prompt(insights_p1, insights_p2, insights_p3, channel)
+                    titles.build_title_prompt(channel, analysis)
                 if action == 5:
                     titles.run(channel['id'])
                 elif action == 6:

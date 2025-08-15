@@ -70,7 +70,7 @@ def run(prompt_text: str = '', prompt_json: Optional[Dict[str, Any]] = None, age
     
     try:
         response = model.generate_content(prompt)
-        database.export('last_response', response.text, path='storage/logs/')
+        database.log('last_response', response.text)
         if not response.text:
             goto_next_model()
             return run(prompt_text, prompt_json, agent_prompt)

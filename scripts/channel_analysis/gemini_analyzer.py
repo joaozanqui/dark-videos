@@ -19,7 +19,7 @@ def generate_phase1_prompt(channel_name: str, channel_description: str, videos_d
         "data": videos_data
     }
 
-    return database.build_prompt('analysis', 'phase1-channel-analysis', variables)
+    return database.get_prompt_template('analysis', 'phase1-channel-analysis', variables)
 
 
 def generate_phase2_prompt(comments_text: str) -> str:
@@ -27,7 +27,7 @@ def generate_phase2_prompt(comments_text: str) -> str:
         "comments_text": comments_text
     }
 
-    return database.build_prompt('analysis', 'phase2-comments-analysis', variables)
+    return database.get_prompt_template('analysis', 'phase2-comments-analysis', variables)
     
 def generate_phase3_prompt(transcript_text: str, video_title: str) -> str:
     variables = {
@@ -35,7 +35,7 @@ def generate_phase3_prompt(transcript_text: str, video_title: str) -> str:
         "video_title": video_title
     }
 
-    return database.build_prompt('analysis', 'phase3-transcripts-analysis', variables)
+    return database.get_prompt_template('analysis', 'phase3-transcripts-analysis', variables)
 
 def generate_phase3_merge_prompt(analysis: str, videos_qty: int, channel_name: str) -> str:
     variables = {
@@ -44,4 +44,4 @@ def generate_phase3_merge_prompt(analysis: str, videos_qty: int, channel_name: s
         "channel_name": channel_name
     }
 
-    return database.build_prompt('analysis', 'phase3-merge-prompts', variables)
+    return database.get_prompt_template('analysis', 'phase3-merge-prompts', variables)
