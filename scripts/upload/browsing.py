@@ -1,7 +1,7 @@
 import pyautogui as gui
 import pyperclip
+import scripts.database as database
 import time
-from config.config import FINAL_VIDEOS_PATH
 
 screenWidth, screenHeight = gui.size()
 
@@ -31,10 +31,12 @@ def goto_page(page):
     gui.press('enter')    
     time.sleep(5)
 
-def search_file(channel_id, title_id, file_name):
-    final_paths = FINAL_VIDEOS_PATH.split('/')[3:]
+def search_file(channel_id, title_number, file_name):
+    device_id = database.DEVICE
+    device = database.get_item('devices', device_id)
+    final_paths = device.split('/')[3:]
     final_paths.append(str(channel_id))
-    final_paths.append(str(title_id))
+    final_paths.append(str(title_number))
     final_paths.append(file_name)
 
     root = final_paths.pop(0)
