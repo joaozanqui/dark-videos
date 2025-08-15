@@ -20,7 +20,7 @@ def get_batch(batch, variables):
     
     return expressions_json
 
-def expressions(subtitles, channel_id, video_id):
+def expressions(subtitles, channel_id, id, table='videos'):
     print("\t\t-Taking expressions...")
     variables = {"ALLOWED_EXPRESSIONS": assets.get_allowed_expressions(channel_id, is_video=True)}
 
@@ -38,14 +38,14 @@ def expressions(subtitles, channel_id, video_id):
     except Exception as e:
         print(f"\t\t\tError taking expressions: {e}")
         print(f"\t\t\tTrying again...")
-        return expressions(subtitles, channel_id, video_id)
+        return expressions(subtitles, channel_id, id)
     
     for expression in all_expressions:
         subtitles[expression['id']-1]['expression'] = expression['expression']
 
-    return database.update('videos', video_id, 'expressions', subtitles)
+    return database.update(table, id, 'expressions', subtitles)
 
-def subtitles(audio_path, language, id):   
+def subtitles(audio_path, language, id, table='videos'):   
     print("\t\t-Generating subtitles...")
 
     model = whisper.load_model("medium")
@@ -60,7 +60,7 @@ def subtitles(audio_path, language, id):
                     # fp16=False  
                     verbose=False
                 )   
-        return database.update('videos', id, 'subtitles', result["segments"])
+        return database.update(table, id, 'subtitles', result["segments"])
     
     except Exception as e:
         print(f"Subtitles error: {e}")
