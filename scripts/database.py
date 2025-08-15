@@ -1,5 +1,6 @@
 from supabase import create_client, Client
 from config.config import SUPABASE_ANON_KEY, SUPABASE_URL, DEVICE
+import shutil
 import os
 import json
 import scripts.utils.handle_text as handle_text
@@ -30,6 +31,10 @@ def log(file_name: str, data: str|list|dict, format='txt'):
 
 def has_file(file_path):
     return os.path.exists(file_path)
+
+def remove_file(file_path):
+    if has_file(file_path):
+        shutil.rmtree(file_path)
 
 def get_prompt_template(prompt_type, file_name, variables):
     response_data = (

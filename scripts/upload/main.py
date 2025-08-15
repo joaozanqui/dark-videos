@@ -106,3 +106,5 @@ def run(channel_id):
         for shorts in all_shorts:
             shorts_idea = [idea for idea in video['shorts_ideas'] if idea["id"] == shorts['number']]
             handle_upload(channel, shorts_idea['main_title'][:100], shorts['description'], title['title_number'], is_shorts=True, shorts_number=shorts['number'])
+        
+        database.update('videos', video['id'], 'uploaded', True)
