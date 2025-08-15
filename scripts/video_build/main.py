@@ -7,17 +7,19 @@ import scripts.video_build.expressions_images as expressions_images
 import gc
 import scripts.database as database
 
-def render_video(audio, video, final_path, file_name='video'):       
-    output_path = f"{final_path}/{file_name}.mp4"
+def render_video(audio, video, final_path, file_name='video'):    
+    output_path = f"{final_path}/videos"
+    os.makedirs(output_path, exist_ok=True)
+    output_file = f"{output_path}/{file_name}.mp4"
 
     video.audio = audio
     video.fps = 24
     gc.collect()
     
-    print(f"\t\t-Exporting final video: {output_path}")
+    print(f"\t\t-Exporting final video: {output_file}")
     
     video.write_videofile(
-        output_path, 
+        output_file, 
         codec='libx264', 
         audio_codec='aac',
         temp_audiofile='audio.m4a',

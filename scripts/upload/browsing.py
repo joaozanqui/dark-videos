@@ -37,6 +37,7 @@ def search_file(channel_id, title_number, file_name):
     final_paths = device.split('/')[3:]
     final_paths.append(str(channel_id))
     final_paths.append(str(title_number))
+    final_paths.append('videos')
     final_paths.append(file_name)
 
     root = final_paths.pop(0)

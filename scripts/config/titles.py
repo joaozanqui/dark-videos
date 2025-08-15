@@ -8,7 +8,7 @@ import json
 def build_title_prompt(channel: dict, analysis: dict) -> str:
     language = database.get_item('languages', channel['language_id'])
     json_format_response = f'''[{{"title": "title in {language}", "rationale": "explanation text"}}]'''
-    variables = database.get_item('channels_responses', channel['id'], column_to_compare='channel_id', select='variables')
+    variables = database.channel_variables(channel['id'])
 
     other_variables = {
         "phase1_insights": handle_text.sanitize(analysis['insights_p1']),
