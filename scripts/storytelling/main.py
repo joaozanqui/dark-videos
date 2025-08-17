@@ -63,6 +63,8 @@ def run(channel_id: int):
     if not variables:
         return False
     
+
+    last_expressions = []
     for title in titles:
         video_data = handle_video_data(title['id'])
 
@@ -79,8 +81,10 @@ def run(channel_id: int):
         if not variables['FULL_SCRIPT']:
             return False
         
-        generate_infos.run(video_data, variables)
-
+        variables['LAST_THUMBNAIL_EXPRESSIONS'] = last_expressions
+        thumbnail_expression = generate_infos.run(video_data, variables)
+        last_expressions.append(thumbnail_expression)
+        
         print(f"\t\t - Done!")
 
     return True

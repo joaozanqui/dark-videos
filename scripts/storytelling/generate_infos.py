@@ -35,6 +35,8 @@ def generate_thumbnail_prompt(video_data, infos_variables, description):
         prompt = database.get_prompt_template('build', 'thumbnail', infos_variables)   
         thumbnail_prompt = gemini.run(prompt_json=prompt)
         database.update('videos', video_data['id'], 'thumbnail_prompt', thumbnail_prompt)
+    
+    return thumbnail_data['expression']
 
 def run(video_data, variables):
     infos_variables = {
@@ -46,6 +48,6 @@ def run(video_data, variables):
     }
 
     description = handle_description(video_data, infos_variables)
-    generate_thumbnail_prompt(video_data, infos_variables, description)
+    thumbnail_expression = generate_thumbnail_prompt(video_data, infos_variables, description)
     
-    return
+    return thumbnail_expression
