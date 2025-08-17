@@ -1,5 +1,6 @@
 import json
 import re
+import scripts.utils.gemini as gemini
 import unicodedata
 import langid
 from string import Template
@@ -56,7 +57,8 @@ def format_json_response(response):
     try:
         return json.loads(json_str)
     except json.JSONDecodeError as e:
-        print(f"\t\t\t - Erro ao decodificar JSON: {e}")
+        print(f"Error decode JSON: {e}")
+        gemini.goto_next_model()
         return None
 
 def get_language_code(language_input: str) -> str | None:

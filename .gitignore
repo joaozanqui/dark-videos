@@ -1,6 +1,6 @@
 __pycache__
 .env
-*-test.py
+*-test.*
 data.json
 output/
 todo.txt
