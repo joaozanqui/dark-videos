@@ -16,7 +16,11 @@ def select_from_data(table):
     print(f"\n- Select one item from '{table}':")
     for id, data in data_map.items():
         name = data.get('channel_name') or data.get('name')
-        print(f"{id} - {name}")
+        if table == 'analysis':
+            channels_with_this_analysis = database.get_data('channels', id, column_to_compare='analysis_id')
+            print(f"{id} - {name} ({[channel['name'] for channel in channels_with_this_analysis]})")
+        else:
+            print(f"{id} - {name}")
 
     selected_data = None
     while not selected_data:

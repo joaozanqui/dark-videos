@@ -3,7 +3,7 @@ import scripts.storytelling.main as storytelling
 import scripts.config.prompts as prompts
 import scripts.config.variables as handle_variables
 import scripts.ideas.main as ideas
-import scripts.config.titles as titles
+import scripts.ideas.titles as titles
 import scripts.images.main as images
 import scripts.images.thumbnail as thumbnail
 import scripts.audios.main as audios
@@ -44,22 +44,18 @@ def run_process():
 
     if action == 1:
         channel_analysis.run_full_analysis_pipeline()
-    elif action == 2:
+    elif action >= 2 and action <= 8:
         analysis = inputs.select_from_data('analysis')
-        ideas.run(analysis)
-    elif action == 17:
-        cleaner.run()        
-    else:
-        channel = inputs.select_from_data('channels')           
-        analysis_id = channel['analysis_id']
-        analysis = database.get_item('analysis', value=analysis_id)
-
-        if action == 3:
-            handle_variables.run(channel, analysis)
+        
+        if action == 2:
+            ideas.run(analysis)
         else:
-            if action == 4:
+            channel = inputs.select_from_data('channels')           
+            if action == 3:
+                handle_variables.run(channel, analysis)
+            elif action == 4:
                 titles.build_title_prompt(channel, analysis)
-            if action == 5:
+            elif action == 5:
                 titles.run(channel['id'])
             elif action == 6:
                 prompts.run(channel['id'], step='agents')
@@ -67,22 +63,28 @@ def run_process():
                 prompts.run(channel['id'], step='script')
             elif action == 8:
                 storytelling.run(channel['id'])
-            elif action == 9:
-                images.run(channel['id'])
-            elif action == 10:
-                thumbnail.run(channel['id'])
-            elif action == 11:
-                audios.run(channel['id'])
-            elif action == 12:
-                video_build.run(channel['id'])
-            elif action == 13:
-                shorts.run(channel['id'])
-            elif action == 14:
-                shorts.audios(channel['id'])
-            elif action == 15:
-                shorts.build(channel['id'])
-            elif action == 16:
-                upload.run(channel['id'])
+    elif action == 17:
+        cleaner.run()        
+    else:
+        channel = inputs.select_from_data('channels')           
+        analysis = database.get_item('analysis', value=channel['analysis_id'])
+
+        if action == 9:
+            images.run(channel['id'])
+        elif action == 10:
+            thumbnail.run(channel['id'])
+        elif action == 11:
+            audios.run(channel['id'])
+        elif action == 12:
+            video_build.run(channel['id'])
+        elif action == 13:
+            shorts.run(channel['id'])
+        elif action == 14:
+            shorts.audios(channel['id'])
+        elif action == 15:
+            shorts.build(channel['id'])
+        elif action == 16:
+            upload.run(channel['id'])
 
 
 if __name__ == "__main__":
