@@ -4,6 +4,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 import scripts.video_build.generate as generate
 import scripts.video_build.background_video as background_video
 import scripts.video_build.expressions_images as expressions_images
+import scripts.shorts.main as shorts
 import gc
 import scripts.database as database
 
@@ -144,12 +145,15 @@ def run(channel_id):
 
     for title in titles:
         video = database.get_item('videos', title['id'], column_to_compare='title_id')
+        if video['uploaded']:
+            continue
+        
         print(f"\t-(Channel: {channel_id} / Title: {title['title_number']}) {title['title']}")
         final_path = f"storage/{channel_id}/{title['title_number']}"
         
         if not video['has_audio'] or not video['description']:
             continue
-        
+
         if video['generated_device']:
             device = database.get_item('devices', video['generated_device'])
             print(f"\t\t-Video file already exists in device '{device['name']}'!")
@@ -158,6 +162,9 @@ def run(channel_id):
             language = database.get_item('languages', channel['language_id'])
             build_video(final_path, channel, video, language['name'])
             database.update('videos', video['id'], 'generated_device', database.DEVICE)
+
+            subtitles_top = channel['shorts_subtitles_position'] == 'top'
+            shorts.build(channel, title, subtitles_top)
         finally:
             print("\t- Cleaning up memory before next iteration...")
             collected_objects = gc.collect()

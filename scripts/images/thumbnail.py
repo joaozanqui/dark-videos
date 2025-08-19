@@ -2,7 +2,6 @@ from PIL import ImageFont, ImageDraw, Image
 import textwrap
 import os 
 import scripts.database as database
-from scripts.images.main import ALLOWED_IMAGES_EXTENSIONS
 
 FONT_PATH = "assets/font.ttf"
 
@@ -76,7 +75,7 @@ def draw_thumbnail(background: Image.Image, expression: str, wrapped_text: str, 
 
 def image_file_path(final_path):
     image_path = ''
-    for ext in ALLOWED_IMAGES_EXTENSIONS:
+    for ext in database.ALLOWED_IMAGES_EXTENSIONS:
         image_path = f"{final_path}/image.{ext}"
         has_image = os.path.exists(image_path)
         if has_image:
@@ -119,22 +118,3 @@ def build(image_path: str, output_path: str, channel_id: str, thumbnail_data: di
     except Exception as e:
         print(f"Error creating thumbnail: {e}")
         return False
-
-def run(channel_id):
-    channel = database.get_item('channels', channel_id)
-    print(f"- {channel['name']}")
-    titles = database.channel_titles(channel_id)
-
-    for title in titles:
-        print(f"\t- {title['title_number']}. {title['title']}")
-        final_path = f"storage/{channel_id}/{title['title_number']}"
-
-        video = database.get_item('videos', title['id'], column_to_compare='title_id')
-        if video['has_thumbnail']:
-            continue
-
-        if video['has_image']:
-            image_path = image_file_path(final_path)
-            output_thumbnail_path = f"{final_path}/thumbnail.png"
-            if build(image_path, output_thumbnail_path, channel_id, video['thumbnail_data']):
-                database.update('videos', video['id'], 'has_thumbnail', True)

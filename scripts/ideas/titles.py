@@ -42,11 +42,13 @@ def run(channel_id):
     prompt = database.get_prompt_file(channel_id, 'titles')
     title_ideas = gemini.run(prompt_json=prompt)
     titles_json = handle_text.format_json_response(title_ideas)
-    if not titles_json:
+    if not titles_json or not isinstance(titles_json, list):
         return run(channel_id)
 
     print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
     for i, title in enumerate(titles_json):
+        if not isinstance(title, dict):
+            return run(channel_id)
         print(f"({i}) / {title['title']} - {title['rationale']}\n")
 
     confirm = inputs.yes_or_no("Confirm the titles?")

@@ -21,6 +21,8 @@ def transcripts_analysis(most_viewed_videos, channel_name):
     
     for video in videos:
         transcripts = get_transcripts(video['video_id'])
+        if not transcripts:
+            continue
         prompt_p3 = generate_phase3_prompt(transcripts, video['title'])
         analysis += gemini.run(prompt_json=prompt_p3)
         analysis += "\n"

@@ -11,7 +11,7 @@ def last_shorts_number(video):
     sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
     return sorted_shorts[-1]['number']
 
-def run(video, idea, variables, final_path):
+def run(video, idea, variables):
     if last_shorts_number(video) >= variables['SHORTS_QTY']:
         return
 
@@ -23,7 +23,7 @@ def run(video, idea, variables, final_path):
         script = generate(variables, file_name='shorts_script')
         if handle_text.is_text_wrong(script, variables['LANGUAGE']):
             print(f"\t\t\t- Shorts Script generated with errors!\n\t\t\t- trying again...")
-            return run(idea, variables, final_path)
+            return run(idea, variables)
         
         shorts_data = {
             "video_id": video['id'],
@@ -35,4 +35,4 @@ def run(video, idea, variables, final_path):
         return
     except Exception as e:
         print(f"\t\t-Error to get shorts script: {e}")
-        return run(video, idea, variables, final_path)
+        return run(video, idea, variables)

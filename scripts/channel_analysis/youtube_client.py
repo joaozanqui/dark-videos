@@ -210,10 +210,10 @@ def fetch_top_liked_comments(
                 textFormat="plainText" 
             ).execute()
         except HttpError as e:
-            print(f"HTTP error {e.resp.status} ao buscar comentários do vídeo {video_id}: {e.content}")
+            print(f"HTTP error {e.resp.status} getting video comments {video_id}: {e.content}")
             break
         except Exception as e:
-            print(f"Erro inesperado ao buscar comentários do vídeo {video_id}: {e}")
+            print(f"Unexpecting error getting video comments {video_id}: {e}")
             break
 
         for item in response.get("items", []):
@@ -253,9 +253,11 @@ def get_transcripts(video_id: str, attempt_numer=1) -> str:
         full_text = " ".join([entry['text'] for entry in transcript])
         return full_text
     except TranscriptsDisabled:
-        return "[Transcripts Disabled]"
+        print("Transcripts Disabled")
+        return ""
     except NoTranscriptFound:
-        return "[No Transcript Found]"
+        print("No Transcript Found")
+        return ""
     except ET.ParseError:
         if attempt_numer < 5:
             return get_transcripts(video_id, attempt_numer=attempt_numer + 1)
