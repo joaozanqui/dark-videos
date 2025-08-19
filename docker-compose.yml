@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  yotube_videos:
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yotube_videos
+    volumes:
+      - ./storage:/app/storage/
+      - ./assets:/app/assets
+      - ./scripts:/app/scripts
+      - ./config/.env:/app/config/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    command: tail -f /dev/null 
+    
