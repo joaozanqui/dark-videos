@@ -1,19 +1,19 @@
 from pathlib import Path
 import scripts.database as database
 import scripts.utils.device as device
+import scripts.images.thumbnail as thumbnail
 from typing import Optional
 import shutil
 import os
 import pyperclip
 import time
 
-ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
 
 def copy_image_to_right_path(final_path: str) -> Optional[Path]:
     try:        
         last_file = device.get_last_downloaded_file()
         ext = last_file.suffix.lstrip(".")
-        if not ext in ALLOWED_IMAGES_EXTENSIONS:
+        if not ext in database.ALLOWED_IMAGES_EXTENSIONS:
             ext = 'png'
 
         file_name = f"image.{ext}"
@@ -60,13 +60,16 @@ def run(channel_id):
                 time.sleep(5)
                 last_file = device.get_last_downloaded_file()
             
-            copied = copy_image_to_right_path(final_path)
+            image_path = copy_image_to_right_path(final_path)
             
-            if not copied:
+            if not image_path:
                 print("Error coping image...")
                 return None
-            
             database.update('videos', video['id'], 'has_image', True)
+
+            output_thumbnail_path = f"{final_path}/thumbnail.png"
+            if thumbnail.build(image_path, output_thumbnail_path, channel_id, video['thumbnail_data']):
+                database.update('videos', video['id'], 'has_thumbnail', True)
             print("Successful!\n\n")
 
         except Exception as e:

@@ -69,7 +69,12 @@ def initialize_chat(script_agent_prompt: str, script_template_prompt: dict, vari
     return chat
 
 def chat_with_model(chat, prompt):
-    last_response = chat.send_message(str(prompt))
+    try:
+        last_response = chat.send_message(str(prompt))
+    except Exception as e:
+        print(f"Error to chat with gemini: {e}")
+        gemini.goto_next_model()
+        return chat_with_model(chat, prompt)
     script = last_response.text
 
     return script

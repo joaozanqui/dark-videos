@@ -2,7 +2,7 @@ import scripts.database as database
 import scripts.storytelling.generate_script as generate_script
 import scripts.storytelling.generate_infos as generate_infos
 import scripts.storytelling.generate_topics as generate_topics
-import scripts.utils.handle_text as handle_text
+import scripts.shorts.main as shorts
 
 def handle_video_data(title_id: int):
     video_data = database.get_item('videos', title_id, column_to_compare='title_id')
@@ -84,6 +84,8 @@ def run(channel_id: int):
         variables['LAST_THUMBNAIL_EXPRESSIONS'] = last_expressions
         thumbnail_expression = generate_infos.run(video_data, variables)
         last_expressions.append(thumbnail_expression)
+
+        shorts.create(channel, title)
         
         print(f"\t\t - Done!")
 

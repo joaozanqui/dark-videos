@@ -7,6 +7,7 @@ import scripts.utils.handle_text as handle_text
 
 db: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
 
 def export(file_name: str, data: str|list|dict, format='txt', path='storage/') -> str:
     try:
@@ -139,8 +140,9 @@ def exists(table, value=None, column_to_compare='id'):
 
 def channel_titles(channel_id):     
     titles = get_data('titles', channel_id, column_to_compare='channel_id')   
-    
-    return titles
+    sorted_titles = sorted(titles, key=lambda x: x["title_number"])
+
+    return sorted_titles
 
 def title_channel(title_id):     
     title = get_item('titles', title_id)
@@ -155,7 +157,7 @@ def next_title_number(channel_id):
         return 1
 
     highest_number = max(item['title_number'] for item in titles)
-    return highest_number
+    return highest_number + 1
 
 def channel_variables(channel_id):
     variables = get_item('channels_responses', channel_id, column_to_compare='channel_id', select='variables')

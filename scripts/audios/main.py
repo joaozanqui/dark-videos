@@ -89,6 +89,26 @@ def download_audios(full_script, final_path):
     audio_path = merge_audio(audios_paths, final_path)
     return audio_path
 
+def shorts(video_id, final_path):
+    print(f"\t\t-Shorts:")
+    all_shorts = database.get_data('shorts', video_id, column_to_compare='video_id')
+
+    for shorts in all_shorts:
+        if shorts['has_audio']:
+            continue
+        print(f"\t\t-{shorts['number']}...")
+        audio_file = capcut.run(shorts['full_script'])
+        shorts_name = f"shorts_{shorts['number']}"
+        audio_path = copy_audio_to_right_path(shorts_name, final_path, audio_file)
+
+        if not audio_path:
+            print("Error coping audio...")
+            return False
+        
+        database.update('shorts', shorts['id'], 'has_audio', True)
+    print(f"\t\t- Shorts Finished!: {audio_path}")
+    return True
+
 def run(channel_id) -> Optional[Path]:
     # https://www.capcut.com/magic-tools/text-to-speech
     channel = database.get_item('channels', channel_id)
@@ -106,6 +126,9 @@ def run(channel_id) -> Optional[Path]:
             audio_path = download_audios(video['full_script'], final_path)
             
             database.update('videos', video['id'], 'has_audio', True)
+            if not shorts(video['id'], final_path):
+                return
+
             print(f"Successful!: {audio_path}\n\n")
         except Exception as e:
             print(f"Error {channel['id']}/{title['title_number']}: {e}")
