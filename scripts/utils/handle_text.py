@@ -1,8 +1,6 @@
 import json
 import re
-import scripts.utils.gemini as gemini
 import unicodedata
-import langid
 from string import Template
 
 def substitute_variables_in_json(data_structure, variables):
@@ -58,6 +56,7 @@ def format_json_response(response):
         return json.loads(json_str)
     except json.JSONDecodeError as e:
         print(f"Error decode JSON: {e}")
+        import scripts.utils.gemini as gemini
         gemini.goto_next_model()
         return None
 
@@ -100,6 +99,7 @@ def sanitize_dict(variables: dict) -> dict:
 
 def is_language_right(text, language):
     language_code = get_language_code(language)
+    import langid
     lang, _ = langid.classify(text)
     if lang != language_code:
         print(f"\t\t -Wrong language ({lang}), it must be {language}")
