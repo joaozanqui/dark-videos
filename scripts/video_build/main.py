@@ -7,6 +7,7 @@ import scripts.video_build.expressions_images as expressions_images
 import scripts.shorts.main as shorts
 import gc
 import scripts.database as database
+import config.keys as keys
 
 def render_video(audio, video, final_path, file_name='video'):    
     output_path = f"{final_path}/videos"
@@ -161,7 +162,7 @@ def run(channel_id):
         try:  
             language = database.get_item('languages', channel['language_id'])
             build_video(final_path, channel, video, language['name'])
-            database.update('videos', video['id'], 'generated_device', database.DEVICE)
+            database.update('videos', video['id'], 'generated_device', keys.DEVICE)
 
             subtitles_top = channel['shorts_subtitles_position'] == 'top'
             shorts.build(channel, title, subtitles_top)

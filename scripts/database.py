@@ -1,5 +1,5 @@
 from supabase import create_client, Client
-from config.config import SUPABASE_ANON_KEY, SUPABASE_URL, DEVICE
+from config.keys import SUPABASE_ANON_KEY, SUPABASE_URL, DEVICE
 import shutil
 import os
 import json
@@ -115,17 +115,17 @@ def get_all_data(table, select="*"):
     return data
 
 def get_data(table, value=None, column_to_compare='id',select="*"):
-    item = (
-        db.table(table)
-        .select(select)
-        .eq(column_to_compare, value)
-        .execute()
-        .data
-    )
-    
-    if select != "*":
-        return item[select]
-    
+    query = db.table(table).select(select)
+    if isinstance(value, list):
+        query = query.in_(column_to_compare, value)
+    elif value is not None:
+        query = query.eq(column_to_compare, value)
+
+    item = query.execute().data
+
+    if select != "*" and isinstance(select, str) and not isinstance(value, list):
+        return item[0][select] if item else None
+
     return item
 
 def exists(table, value=None, column_to_compare='id'):

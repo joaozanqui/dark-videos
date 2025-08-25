@@ -1,15 +1,5 @@
-import os
 import google.generativeai as genai
-import json
-from dotenv import load_dotenv
-load_dotenv()
-
-GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
-GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
-PIXABAY_API_KEYS: list | None = json.loads(os.getenv("PIXABAY_API_KEYS")) if os.getenv("PIXABAY_API_KEYS") else None
-SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY: str | None = os.getenv("SUPABASE_ANON_KEY")
-DEVICE: int | None = os.getenv("DEVICE")
+import config.keys as keys
 
 MODEL_NAME = "gemini-2.0-flash"
 
@@ -21,27 +11,27 @@ MODELS_LIST = [
     "gemini-1.5-flash"
 ]
 
-if not GEMINI_API_KEY:
+if not keys.GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in .env file or environment variables.")
 
-if not GOOGLE_API_KEY:
+if not keys.GOOGLE_API_KEY:
     raise ValueError("GOOGLE_API_KEY not found in .env file or environment variables.")
 
-if not PIXABAY_API_KEYS:
+if not keys.PIXABAY_API_KEYS:
     raise ValueError("PIXABAY_API_KEYS not found in .env file or environment variables.")
 
-if not SUPABASE_URL:
+if not keys.SUPABASE_URL:
     raise ValueError("SUPABASE_URL not found in .env file or environment variables.")
 
-if not SUPABASE_ANON_KEY:
+if not keys.SUPABASE_ANON_KEY:
     raise ValueError("SUPABASE_ANON_KEY not found in .env file or environment variables.")
 
-if not DEVICE:
+if not keys.DEVICE:
     raise ValueError("DEVICE not found in .env file or environment variables.")
 
 try:
-    if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
+    if keys.GEMINI_API_KEY:
+        genai.configure(api_key=keys.GEMINI_API_KEY)
 except Exception as e:
     raise RuntimeError(f"Error configuring Gemini API: {e}")
 
