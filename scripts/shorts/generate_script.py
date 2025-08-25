@@ -3,16 +3,21 @@ from scripts.shorts.utils import generate
 import scripts.utils.handle_text as handle_text
 import json
 
-def last_shorts_number(video):
-    all_shorts = database.get_data('shorts', video['id'], 'video_id')
+def last_shorts_number(all_shorts):
     if not all_shorts:
+        return 0
+    
+    scripts = [shorts['full_script'] for shorts in all_shorts]
+    if not all(scripts):
         return 0
     
     sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
     return sorted_shorts[-1]['number']
 
 def run(video, idea, variables):
-    if last_shorts_number(video) >= variables['SHORTS_QTY']:
+    all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
+    
+    if last_shorts_number(all_shorts) >= variables['SHORTS_QTY']:
         return
 
     variables['SHORTS_IDEA_TITLE'] = idea['main_title']
@@ -31,7 +36,13 @@ def run(video, idea, variables):
             "full_script": script,
         }
         
-        database.insert(shorts_data, 'shorts')
+        shorts = next((s for s in all_shorts if s["number"] == idea['id']), None)
+
+        if shorts:
+            database.update('shorts', shorts['id'], 'full_script', script)
+        else:
+            database.insert(shorts_data, 'shorts')
+
         return
     except Exception as e:
         print(f"\t\t-Error to get shorts script: {e}")
