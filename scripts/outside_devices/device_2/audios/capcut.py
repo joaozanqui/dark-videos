@@ -41,7 +41,7 @@ else:
     }
     BUTTONS = {
         "text_tab": (130, 50),
-        "srt_tab": (65, 270),
+        "srt_tab": (65, 305),
         "srt_import": (155, 105),
         "add_srt": (205, 190),
         "text_to_speech_tab": (1700, 55),
@@ -53,6 +53,7 @@ else:
         # "disable_video": (1010, 340),
         # "enable_audio": (1010, 620),
         "export_confirm": (1145, 825),
+        "replace": (915, 600),
         "ok": (1225, 640),
     }
 
@@ -73,8 +74,9 @@ def export(file_name):
     # gui.click(BUTTONS['enable_audio'])
     # time.sleep(1)
     gui.click(BUTTONS['export_confirm'])
-    time.sleep(1)
-
+    time.sleep(0.5)
+    gui.click(BUTTONS['replace'])
+    time.sleep(0.5)
 
 def merge_audio():
     gui.click(BUTTONS['click_to_select'])
