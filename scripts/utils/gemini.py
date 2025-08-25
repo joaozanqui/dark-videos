@@ -1,5 +1,6 @@
 import google.generativeai as genai
-from config.config import GEMINI_API_KEY, DEFAULT_GENERATION_CONFIG, MODELS_LIST
+from config.keys import GEMINI_API_KEY
+from config.config import DEFAULT_GENERATION_CONFIG, MODELS_LIST
 import time
 import json
 from typing import Optional, Dict, Any

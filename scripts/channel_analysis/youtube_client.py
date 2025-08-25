@@ -5,7 +5,7 @@ from googleapiclient.errors import HttpError
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 import xml.etree.ElementTree as ET
-from config.config import GOOGLE_API_KEY
+from config.keys import GOOGLE_API_KEY
 from googleapiclient.discovery import build, Resource  
 
 def get_channel_id_from_url(youtube: Resource, channel_url: str) -> Optional[str]:

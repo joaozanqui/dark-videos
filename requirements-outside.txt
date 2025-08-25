@@ -1,0 +1,6 @@
+pydub==0.25.1
+pyperclip==1.9.0
+pyautogui==0.9.54
+Pillow==9.5.0
+supabase==2.15.2
+python-dotenv==1.1.0

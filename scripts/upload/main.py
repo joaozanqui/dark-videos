@@ -1,16 +1,8 @@
 import scripts.database as database
-import scripts.upload.browsing as browsing
-import scripts.upload.youtube as youtube
+import config.keys as keys
 import os
 from datetime import datetime, timedelta
-
-def upload_single_video(channel, title_id, video_title, video_description, video_name, publish_time, shorts):
-    browsing.goto_page(page=channel['upload_url'])
-    video_added = youtube.add_video(channel['id'], title_id, video_title, video_description, video_name, shorts)
-    if not video_added:
-        print('Error: trying again...')
-        return upload_single_video(channel, title_id, video_title, video_description, video_name, publish_time, shorts)
-    youtube.handle_schedule(publish_time, shorts)
+import importlib
 
 def next_datetime_to_schedule(last_datetime_str, allowed_times, shorts=False, shorts_number=None):
     last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
@@ -45,6 +37,8 @@ def next_datetime_to_schedule(last_datetime_str, allowed_times, shorts=False, sh
 
 def handle_upload(channel, video_title, video_description, title_id, is_shorts=False, shorts_number=-1):
     channel_upload = database.get_item('channels_upload', channel['id'], column_to_compare='channel_id')
+    device_id = keys.DEVICE
+
     if not channel_upload:
         channel_upload_data = {
             "channel_id": channel['id'],
@@ -66,7 +60,9 @@ def handle_upload(channel, video_title, video_description, title_id, is_shorts=F
     video_name = f"shorts_{shorts_number}.mp4" if is_shorts else f"video.mp4"
     publish_time = next_datetime_to_schedule(channel_upload['last_datetime'], channel_upload['allowed_times'], shorts=is_shorts, shorts_number=shorts_number)
 
-    upload_single_video(channel, title_id, video_title, video_description, video_name, publish_time, is_shorts)
+    upload_module_path = f"scripts.outside_devices.device_{device_id}.upload.main"
+    upload = importlib.import_module(upload_module_path)
+    upload.run(channel, title_id, video_title, video_description, video_name, publish_time, is_shorts)
     
     channel_upload['last_video_uploaded'] = title_id
     channel_upload['last_datetime'] = publish_time

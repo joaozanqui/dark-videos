@@ -1,4 +1,5 @@
 import scripts.database as database
+import config.keys as keys
 import scripts.utils.handle_text as handle_text
 import scripts.shorts.ideas as ideas
 import scripts.shorts.generate_script as generate_script
@@ -37,10 +38,15 @@ def build(channel, title, subtitles_top):
     video = database.get_item('videos', title['id'], 'title_id')
     final_path = f"storage/{channel['id']}/{title['title_number']}"
     
-    print(f"\t\t- Shorts")
     all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
     sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
 
+    all_shorts_device = [s['generated_device'] for s in all_shorts]
+    if all(all_shorts_device):
+        print(f"\t\t- Shorts Done!")
+        return
+    
+    print(f"\t\t- Shorts")
     for shorts in sorted_shorts:
         if shorts['generated_device']:
             if not shorts['description']:
@@ -72,7 +78,7 @@ def build(channel, title, subtitles_top):
             video_composite = video_build.create_video(background_video_composite, expressions_images_composite, shorts['subtitles'], subtitles_padding=0.98, subtitles_denominators=(subtitles_w, subtitles_h))
             video_build.render_video(audio, video_composite, final_path, shorts_name)
             build_infos(video, channel, title, shorts)
-            database.update('shorts', shorts['id'], 'generated_device', database.DEVICE)
+            database.update('shorts', shorts['id'], 'generated_device', keys.DEVICE)
         finally:
             print("\t- Cleaning up memory before next iteration...")
             collected_objects = gc.collect()
@@ -81,9 +87,16 @@ def build(channel, title, subtitles_top):
 
 
 def create(channel, title):
-    print(f"\t\t-Shorts Ideas")
-    
     video = database.get_item('videos', title['id'], 'title_id')
+    all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
+    
+    if all_shorts:
+        scripts = [shorts['full_script'] for shorts in all_shorts]
+        if all(scripts):
+            return
+
+    print(f"\t\t-Shorts Ideas video {video['id']}")
+    
     variables = prompt_variables(video, channel, title)
     video['shorts_ideas'] = ideas.run(video, variables)
     

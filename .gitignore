@@ -1,6 +1,7 @@
 __pycache__
 .env
-*-test.*
+tests/
+storage/
 data.json
 output/
 todo.txt

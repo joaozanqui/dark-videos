@@ -69,6 +69,7 @@ def run(channel_id: int):
         video_data = handle_video_data(title['id'])
 
         if video_data['topics'] and video_data['full_script'] and video_data['description'] and video_data['thumbnail_data'] and video_data['thumbnail_prompt']:
+            shorts.create(channel, title)
             continue
 
         print(f"\t-(Channel {channel_id} / Title {title['title_number']}) {title['title']}")

@@ -1,7 +1,7 @@
 import os
 from moviepy.editor import VideoFileClip, concatenate_videoclips, CompositeVideoClip
 from moviepy.video.fx.all import crop
-from config.config import PIXABAY_API_KEYS
+from config.keys import PIXABAY_API_KEYS
 import random
 import requests
 import time
