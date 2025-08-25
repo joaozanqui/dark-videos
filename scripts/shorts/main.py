@@ -38,10 +38,15 @@ def build(channel, title, subtitles_top):
     video = database.get_item('videos', title['id'], 'title_id')
     final_path = f"storage/{channel['id']}/{title['title_number']}"
     
-    print(f"\t\t- Shorts")
     all_shorts = database.get_data('shorts', video['id'], column_to_compare='video_id')
     sorted_shorts = sorted(all_shorts, key=lambda k: k['number'])
 
+    all_shorts_device = [s['generated_device'] for s in all_shorts]
+    if all(all_shorts_device):
+        print(f"\t\t- Shorts Done!")
+        return
+    
+    print(f"\t\t- Shorts")
     for shorts in sorted_shorts:
         if shorts['generated_device']:
             if not shorts['description']:

@@ -44,10 +44,12 @@ def create_srt_from_file(full_script, final_path, output_file = 'full_script'):
 def shorts(video_id, final_path, channel):
     all_shorts = database.get_data('shorts', video_id, column_to_compare='video_id')
     all_shorts.sort(key=lambda s: s["number"])
+    generating = False
     
     for shorts in all_shorts:
         if shorts['has_audio']:
             continue
+        generating = True
 
         print(f"\t\t-{shorts['number']}...")
         srt_file = create_srt_from_file(shorts['full_script'], final_path, output_file=f"shorts_{shorts['number']}")
@@ -61,7 +63,10 @@ def shorts(video_id, final_path, channel):
             return False
         
         database.update('shorts', shorts['id'], 'has_audio', True)
-    print(f"\t\t- Shorts Finished!")
+
+    if generating:
+        print(f"\t\t- Shorts Finished!")
+    
     return True
 
 

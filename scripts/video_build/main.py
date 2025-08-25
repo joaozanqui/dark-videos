@@ -1,6 +1,11 @@
+import librosa
+import numpy as np
+import soundfile as sf
+import tempfile
 import os
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
+from moviepy.audio.AudioClip import AudioArrayClip
 import scripts.video_build.generate as generate
 import scripts.video_build.background_video as background_video
 import scripts.video_build.expressions_images as expressions_images
@@ -95,6 +100,7 @@ def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip
 
     background_music = background_music.volumex(0.5)
     main_audio = CompositeAudioClip([narration_audio, background_music])
+    main_audio = main_audio.set_duration(narration_audio.duration)
 
     if concatenate_intro and os.path.exists(intro_file):
         intro_audio = AudioFileClip(intro_file)
@@ -113,14 +119,70 @@ def fix_subtitles_time(subtitles):
     
     return subtitles
 
+def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_seconds=2.0):
+    if os.path.exists(temp_audio_path):
+        print(f"\t\tProcessed audio file found. Loading from: {temp_audio_path}")
+        try:
+            y, sr = librosa.load(temp_audio_path, sr=None, mono=True)
+            final_audio_reshaped = y.reshape(-1, 1)
+            narration_audio = AudioArrayClip(final_audio_reshaped, fps=sr)
+            print(f"\t\tAudio clip loaded successfully! Duration: {narration_audio.duration:.2f}s")
+            return narration_audio
+        except Exception as e:
+            print(f"\t\tError loading existing temp audio file: {e}. Reprocessing...")
+
+    print(f"\t\tRemoving audio pauses...")
+    try:
+        y, sr = librosa.load(audio_path, sr=None, mono=True)
+    except Exception as e:
+        print(f"\t\tError loading audio file: {e}")
+        return None, None
+
+    sound_intervals = librosa.effects.split(y, top_db=top_db)
+
+    if not sound_intervals.any():
+        print(f"\t\tNo sound detected in the file.")
+        return None, None
+
+    audio_chunks = []
+    start, end = sound_intervals[0]
+    audio_chunks.append(y[start:end])
+
+    for i in range(len(sound_intervals) - 1):
+        end_of_current_chunk = sound_intervals[i][1]
+        start_of_next_chunk = sound_intervals[i+1][0]
+        silence_duration_samples = start_of_next_chunk - end_of_current_chunk
+        if silence_duration_samples < min_pause_duration_seconds:
+            audio_chunks.append(y[end_of_current_chunk:start_of_next_chunk])
+        next_start, next_end = sound_intervals[i+1]
+        audio_chunks.append(y[next_start:next_end])
+
+    final_audio = np.concatenate(audio_chunks)
+
+    if final_audio.size > 0:
+        sf.write(temp_audio_path, final_audio, sr)
+        final_audio_reshaped = final_audio.reshape(-1, 1)
+        narration_audio = AudioArrayClip(final_audio_reshaped, fps=sr)
+        
+        print(f"\t\tAudio clip created in memory successfully! Duration: {narration_audio.duration:.2f}s")
+        
+        return narration_audio
+    else:
+        print("\t\tNo audio left after silence removal. Clip was not created.")
+        return None, None
 
 def build_video(final_path, channel, video, language):
     audio_path = f"{final_path}/audio.mp3"
-    narration_audio = AudioFileClip(audio_path)
+    temp_audio_path = f"{final_path}/resized_audio.mp3"
+    narration_audio = remove_pauses(audio_path, temp_audio_path)
+    if not narration_audio:
+        print("No audio left after silence removal. Clip was not created.")
+        return None
+    
     background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
 
     if not video['subtitles']:
-        video['subtitles'] = generate.subtitles(audio_path, language, video['id'])
+        video['subtitles'] = generate.subtitles(temp_audio_path, language, video['id'])
 
     if not video['expressions']:
         video['expressions'] = generate.expressions(video['subtitles'], channel['id'], video['id'])
@@ -140,6 +202,7 @@ def run(channel_id):
     collected_objects = gc.collect()
     print("--- Building Videos ---\n")
     channel = database.get_item('channels', channel_id)
+    subtitles_top = channel['shorts_subtitles_position'] == 'top'
 
     print(f"- {channel['name']}")
     titles = database.channel_titles(channel_id)
@@ -158,13 +221,13 @@ def run(channel_id):
         if video['generated_device']:
             device = database.get_item('devices', video['generated_device'])
             print(f"\t\t-Video file already exists in device '{device['name']}'!")
+            shorts.build(channel, title, subtitles_top)
             continue
         try:  
             language = database.get_item('languages', channel['language_id'])
             build_video(final_path, channel, video, language['name'])
             database.update('videos', video['id'], 'generated_device', keys.DEVICE)
 
-            subtitles_top = channel['shorts_subtitles_position'] == 'top'
             shorts.build(channel, title, subtitles_top)
         finally:
             print("\t- Cleaning up memory before next iteration...")

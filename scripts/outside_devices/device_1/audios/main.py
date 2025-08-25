@@ -7,10 +7,13 @@ from scripts.audios.utils import copy_audio_to_right_path, divide_text
 def shorts(video_id, final_path):
     print(f"\t\t-Shorts:")
     all_shorts = database.get_data('shorts', video_id, column_to_compare='video_id')
+    generating = False
 
     for shorts in all_shorts:
         if shorts['has_audio']:
             continue
+        generating = True
+
         print(f"\t\t-{shorts['number']}...")
         audio_file = capcut.run(shorts['full_script'])
         shorts_name = f"shorts_{shorts['number']}"
@@ -21,6 +24,10 @@ def shorts(video_id, final_path):
             return False
         
         database.update('shorts', shorts['id'], 'has_audio', True)
+
+    if generating:
+        print(f"\t\t- Shorts Finished!")
+
     print(f"\t\t- Shorts Finished!: {audio_path}")
     return True
 
