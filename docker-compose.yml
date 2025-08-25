@@ -1,17 +1,18 @@
 version: '3.8'
 
 services:
-  yotube_videos:
+  youtube_videos:
     privileged: true
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: yotube_videos
+    container_name: youtube_videos
     volumes:
       - ./storage:/app/storage/
       - ./assets:/app/assets
       - ./scripts:/app/scripts
       - ./config/.env:/app/config/.env
+      - ./tests:/app/tests
     environment:
       - PYTHONUNBUFFERED=1
     ports:
