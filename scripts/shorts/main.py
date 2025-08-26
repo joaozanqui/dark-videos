@@ -55,16 +55,18 @@ def build(channel, title, subtitles_top):
 
         print(f"\t\t- Shorts {shorts['number']}...")
 
-        shorts_name = f"shorts_{shorts['number']}"
-        audio_path = f"{final_path}/{shorts_name}.mp3"
         language = database.get_item('languages', channel['language_id'])
+        shorts_name = f"shorts_{shorts['number']}"
+        audio_path = f"{final_path}/{shorts_name}.mp3"    
+        temp_audio_path = f"{final_path}/resized_audio_{shorts_name}.mp3"
+        narration_audio = video_build.remove_pauses(audio_path, temp_audio_path)
 
         if not shorts['subtitles']:
-            shorts['subtitles'] = generate.subtitles(audio_path, language['name'], shorts['id'], table='shorts')
+            shorts['subtitles'] = generate.subtitles(temp_audio_path, language['name'], shorts['id'], table='shorts')
+
         if not shorts['expressions']:
             shorts['expressions'] = generate.expressions(shorts['subtitles'], channel['id'], shorts['id'], table='shorts')
 
-        narration_audio = AudioFileClip(audio_path)
         background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
         background_video_composite = background_video.run(narration_audio.duration, video_orientation='vertical', target_resolution=(1080, 1920))
         
