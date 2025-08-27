@@ -110,7 +110,6 @@ def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip
 
     return final_audio
 
-
 def fix_subtitles_time(subtitles):
     last_end = '00:00:00,000'
     for subtitle in subtitles:
@@ -119,29 +118,29 @@ def fix_subtitles_time(subtitles):
     
     return subtitles
 
-def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_seconds=2.0):
-    if os.path.exists(temp_audio_path):
-        print(f"\t\tProcessed audio file found. Loading from: {temp_audio_path}")
-        try:
-            y, sr = librosa.load(temp_audio_path, sr=None, mono=True)
-            final_audio_reshaped = y.reshape(-1, 1)
-            narration_audio = AudioArrayClip(final_audio_reshaped, fps=sr)
-            print(f"\t\tAudio clip loaded successfully! Duration: {narration_audio.duration:.2f}s")
-            return narration_audio
-        except Exception as e:
-            print(f"\t\tError loading existing temp audio file: {e}. Reprocessing...")
+def get_narration_audio(temp_audio_path):
+    print(f"\t\t- Processed audio file found. Loading from: {temp_audio_path}")
+    try:
+        y, sr = librosa.load(temp_audio_path, sr=None, mono=True)
+        final_audio_reshaped = y.reshape(-1, 1)
+        narration_audio = AudioArrayClip(final_audio_reshaped, fps=sr)
+        print(f"\t\t- Audio clip loaded successfully! Duration: {narration_audio.duration:.2f}s")
+        return narration_audio
+    except Exception as e:
+        print(f"\t\t- Error loading existing temp audio file: {e}. Reprocessing...")
 
-    print(f"\t\tRemoving audio pauses...")
+def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_seconds=2.0):        
+    print(f"\t\t- Removing audio pauses...")
     try:
         y, sr = librosa.load(audio_path, sr=None, mono=True)
     except Exception as e:
-        print(f"\t\tError loading audio file: {e}")
+        print(f"\t\t- Error loading audio file: {e}")
         return None, None
 
     sound_intervals = librosa.effects.split(y, top_db=top_db)
 
     if not sound_intervals.any():
-        print(f"\t\tNo sound detected in the file.")
+        print(f"\t\t- No sound detected in the file.")
         return None, None
 
     audio_chunks = []
@@ -171,69 +170,83 @@ def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_sec
         print("\t\tNo audio left after silence removal. Clip was not created.")
         return None, None
 
-def build_video(final_path, channel, video, language):
-    audio_path = f"{final_path}/audio.mp3"
-    temp_audio_path = f"{final_path}/resized_audio.mp3"
-    narration_audio = remove_pauses(audio_path, temp_audio_path)
-    if not narration_audio:
-        print("No audio left after silence removal. Clip was not created.")
-        return None
+def run_preprocess(audio_path, temp_audio_path, channel, video):
+    if database.has_file(temp_audio_path) and video['subtitles'] and video['expressions']:
+        print(f"\t\tPreprocess done!")
+        return False
     
-    background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
-
+    print(f"\t\t--- Preparing Videos ---\n")
+    
+    if not database.has_file(temp_audio_path):
+        remove_pauses(audio_path, temp_audio_path)
+    
     if not video['subtitles']:
-        video['subtitles'] = generate.subtitles(temp_audio_path, language, video['id'])
+        language = database.get_item('languages', channel['language_id'])
+        video['subtitles'] = generate.subtitles(temp_audio_path, language['name'], video['id'])
 
     if not video['expressions']:
         video['expressions'] = generate.expressions(video['subtitles'], channel['id'], video['id'])
 
-    subtitles = fix_subtitles_time(video['expressions'])
+    return True
 
-    background_video_composite = background_video.run(narration_audio.duration)
-    expressions_path = f"assets/expressions/{channel['id']}/chroma"
-    expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration)
+def build(final_path, temp_audio_path, channel, video):
+    print(f"\t\t--- Building Videos ---\n")
+
+    narration_audio = get_narration_audio(temp_audio_path)
     intro_file = f"assets/intros/{channel['id']}/intro.mp4"
-
+    background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
     audio = create_audio(narration_audio, background_music, intro_file=intro_file)
+    
+    expressions_path = f"assets/expressions/{channel['id']}/chroma"
+    subtitles = fix_subtitles_time(video['expressions'])
+    expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration)
+    
+    background_video_composite = background_video.run(narration_audio.duration)
     video = create_video(background_video_composite, expressions_images_composite, video['subtitles'], intro_file=intro_file)
     render_video(audio, video, final_path)
 
-def run(channel_id):
-    collected_objects = gc.collect()
-    print("--- Building Videos ---\n")
+def run(channel_id, preprocess=False):
+    process_name = 'Preparing' if preprocess else 'Building'
+    print(f"- {process_name} Videos")
+    
     channel = database.get_item('channels', channel_id)
-    subtitles_top = channel['shorts_subtitles_position'] == 'top'
-
-    print(f"- {channel['name']}")
+    print(f"\t- {channel['name']}")
     titles = database.channel_titles(channel_id)
 
     for title in titles:
         video = database.get_item('videos', title['id'], column_to_compare='title_id')
         if video['uploaded']:
             continue
-        
-        print(f"\t-(Channel: {channel_id} / Title: {title['title_number']}) {title['title']}")
-        final_path = f"storage/{channel_id}/{title['title_number']}"
-        
-        if not video['has_audio'] or not video['description']:
-            continue
+
+        print(f"\t-(Channel: {channel['id']} / Title: {title['title_number']}) {title['title']}")
 
         if video['generated_device']:
             device = database.get_item('devices', video['generated_device'])
-            print(f"\t\t-Video file already exists in device '{device['name']}'!")
-            shorts.build(channel, title, subtitles_top)
+            print(f"\t\t- Video file already exists in device '{device['name']}'!")
+            shorts.run(video, channel, title, preprocess)            
             continue
-        try:  
-            language = database.get_item('languages', channel['language_id'])
-            build_video(final_path, channel, video, language['name'])
-            database.update('videos', video['id'], 'generated_device', keys.DEVICE)
+        
+        
+        if not video['has_audio'] or not video['description']:
+            print(f"\t\tCouldn`t find video AUDIO and DESCRIPTIONS")
+            continue
 
-            shorts.build(channel, title, subtitles_top)
+        try:  
+            final_path = f"storage/{channel['id']}/{title['title_number']}"
+            audio_path = f"{final_path}/audio.mp3"
+            temp_audio_path = f"{final_path}/resized_audio.mp3"
+        
+            is_preprocessed = False
+            if preprocess:
+                is_preprocessed = run_preprocess(audio_path, temp_audio_path, channel, video)
+            else:
+                build(final_path, temp_audio_path, channel, video)
+                database.update('videos', video['id'], 'generated_device', keys.DEVICE)
+            
+            shorts.run(video, channel, title, preprocess)     
+            
+            if is_preprocessed or not preprocess:
+                print(f"\t\t- {process_name} Process Finished ---")       
         finally:
-            print("\t- Cleaning up memory before next iteration...")
             collected_objects = gc.collect()
             print(f"\t\t- Memory cleanup complete. Freed {collected_objects} objects.")
-            print("-" * 40)
-
-    
-    print("\n--- Process Finished ---")

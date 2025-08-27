@@ -1,13 +1,42 @@
 from supabase import create_client, Client
-from config.keys import SUPABASE_ANON_KEY, SUPABASE_URL, DEVICE
+from config.keys import SUPABASE_ANON_KEY, SUPABASE_URL, SUPABASE_CONNECTION_URI
 import shutil
 import os
+import subprocess
+from datetime import datetime
 import json
 import scripts.utils.handle_text as handle_text
 
 db: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 ALLOWED_IMAGES_EXTENSIONS = ['jpg', 'png', 'jpeg']
+
+def backup():
+    if not SUPABASE_CONNECTION_URI:
+        print("Error: No SUPABASE_CONNECTION_URI found.")
+        return
+
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_path = f"storage/backups"
+    os.makedirs(output_path, exist_ok=True)
+    output_file = f"{output_path}/{timestamp}.sql"
+
+    command = [
+        'pg_dump',
+        '--dbname', SUPABASE_CONNECTION_URI,
+        '--file', output_file,
+        '--clean',
+        '--if-exists'
+    ]
+
+    try:
+        print(f"Starting database backup to file: {output_file}")
+        subprocess.run(command, check=True, capture_output=True, text=True)
+        print("Backup done!")
+    except FileNotFoundError:
+        print("Error: 'pg_dump' not found.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e.stderr}")
 
 def export(file_name: str, data: str|list|dict, format='txt', path='storage/') -> str:
     try:

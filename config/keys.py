@@ -8,4 +8,5 @@ GOOGLE_API_KEY: str | None = os.getenv("GOOGLE_API_KEY")
 PIXABAY_API_KEYS: list | None = json.loads(os.getenv("PIXABAY_API_KEYS")) if os.getenv("PIXABAY_API_KEYS") else None
 SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY: str | None = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_CONNECTION_URI: str | None = os.getenv("SUPABASE_CONNECTION_URI")
 DEVICE: int | None = os.getenv("DEVICE")
