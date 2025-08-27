@@ -11,6 +11,6 @@ exec:
 kill: 
 	docker-compose stop && docker-compose rm -f
 build-outside:
-	pip install -r requirements-outside.txt
+	pip install -r requirements-outside.txt --break-system-packages
 outside:
-	make build-outside && python3 main.py
+	python3 main.py
