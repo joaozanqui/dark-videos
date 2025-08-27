@@ -2,7 +2,7 @@ import pyautogui as gui
 from datetime import datetime
 import pyperclip
 import time
-from scripts.upload.browsing import search_file
+from scripts.outside_devices.device_1.utils import search_file
 
 BUTTONS = {
 # add
@@ -44,7 +44,7 @@ def select_image(channel_id, title_id):
     gui.click(BUTTONS['thumbnail_button'])
     time.sleep(1)
     file_name = 'thumbnail.png'
-    search_file(channel_id, title_id, file_name)
+    search_file(channel_id, title_id, file_name, image=True)
 
 def fill_text(title, description):
     while len(title) > 100:
@@ -54,7 +54,7 @@ def fill_text(title, description):
     gui.hotkey('ctrl', 'a')
     pyperclip.copy(title)
     gui.hotkey('ctrl', 'v')
-    time.sleep(0.5)
+    time.sleep(1)
         
     gui.click(BUTTONS['description_box'])
     gui.hotkey('ctrl', 'a')
