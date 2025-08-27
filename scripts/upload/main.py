@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import importlib
 
 def next_datetime_to_schedule(last_datetime_str, allowed_times, shorts=False, shorts_number=None):
-    last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+    last_datetime = datetime.strptime(last_datetime_str.replace("T", " "), "%Y-%m-%d %H:%M:%S")
 
     if shorts:
         if int(shorts_number) == 1:
@@ -42,33 +42,32 @@ def handle_upload(channel, video_title, video_description, title_id, is_shorts=F
     if not channel_upload:
         channel_upload_data = {
             "channel_id": channel['id'],
-            "last_video_uploaded": -1,
-            "last_shorts_uploaded": -1,
+            "last_title_number": -1,
+            "last_shorts_number": -1,
             "last_datetime": '01/01/2000',
             "allowed_times": ['16:00'],
         }
         channel_upload = database.insert(channel_upload_data, 'channels_upload')
 
 
-    old_title = title_id < channel_upload['last_video_uploaded']
-    same_title = title_id == channel_upload['last_video_uploaded']
-    old_shorts = not is_shorts or shorts_number <= channel_upload['last_shorts_uploaded']
+    old_title = title_id < channel_upload['last_title_number']
+    same_title = title_id == channel_upload['last_title_number']
+    old_shorts = not is_shorts or shorts_number <= channel_upload['last_shorts_number']
     
     if old_title or (same_title and old_shorts):
         return 
     
     video_name = f"shorts_{shorts_number}.mp4" if is_shorts else f"video.mp4"
     publish_time = next_datetime_to_schedule(channel_upload['last_datetime'], channel_upload['allowed_times'], shorts=is_shorts, shorts_number=shorts_number)
-
     upload_module_path = f"scripts.outside_devices.device_{device_id}.upload.main"
     upload = importlib.import_module(upload_module_path)
     upload.run(channel, title_id, video_title, video_description, video_name, publish_time, is_shorts)
     
-    channel_upload['last_video_uploaded'] = title_id
+    channel_upload['last_title_number'] = title_id
     channel_upload['last_datetime'] = publish_time
-    channel_upload['last_shorts_uploaded'] = shorts_number if is_shorts else -1
+    channel_upload['last_shorts_number'] = shorts_number if is_shorts else -1
 
-    for key, value in channel_upload:
+    for key, value in channel_upload.items():
         database.update('channels_upload', channel_upload['id'], key, value)
 
 def get_shorts(shorts_path):
@@ -88,19 +87,27 @@ def run(channel_id):
     titles = database.channel_titles(channel_id)
 
     for title in titles:
+        # colocar verificacao se o
         video = database.get_item('videos', title['id'], column_to_compare='title_id')
-        print(f"\t-({channel_id}/{title['title_nubmer']}) {title['title']}")
+        print(f"\t-({channel_id}/{title['title_number']}) {title['title']}")
+        if(video['uploaded']):
+            continue
 
         video_title = title['title']
         video_description = video['description']
         handle_upload(channel, video_title, video_description, title['title_number'])
         
-        all_shorts = database.get_data('shorts', video['id'], video['id'])
+        all_shorts = database.get_data('shorts', video['id'], 'video_id')
         if not all_shorts:
             return
         
+        all_shorts.sort(key=lambda s: s["number"])
+        uploaded_shorts = [s['uploaded'] for s in all_shorts]
+        if all(uploaded_shorts):
+            continue
+
         for shorts in all_shorts:
-            shorts_idea = [idea for idea in video['shorts_ideas'] if idea["id"] == shorts['number']]
+            shorts_idea = next((idea for idea in video['shorts_ideas'] if idea["id"] == shorts['number']), None)
             handle_upload(channel, shorts_idea['main_title'][:100], shorts['description'], title['title_number'], is_shorts=True, shorts_number=shorts['number'])
         
         database.update('videos', video['id'], 'uploaded', True)
