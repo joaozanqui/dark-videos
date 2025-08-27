@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    network_mode: "host"
     container_name: youtube_videos
     volumes:
       - ./storage:/app/storage/
@@ -19,4 +20,3 @@ services:
       - "8000:8000"
     restart: unless-stopped
     command: tail -f /dev/null 
-    

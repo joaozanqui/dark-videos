@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libfreetype6-dev \
     git \
-    imagemagick
+    imagemagick \
+    postgresql-client
 
 RUN POLICY_FILE=$(find /etc -name "policy.xml") && \
     sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- & -->/' "$POLICY_FILE" && \

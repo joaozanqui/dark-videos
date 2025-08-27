@@ -21,11 +21,14 @@ def inside_container(action):
     import scripts.ideas.titles as titles
     import scripts.video_build.main as video_build
     import scripts.cleaner as cleaner
+    from scripts.database import backup
 
     if action == 1:
-        channel_analysis.run_full_analysis_pipeline()
-    elif action == 10:
-        cleaner.run()   
+        channel_analysis.run_full_analysis_pipeline() 
+    elif action == 11:
+        cleaner.run()  
+    elif action == 12:            
+        backup()
     else:
         channel = inputs.select_from_data('channels')           
 
@@ -48,6 +51,7 @@ def inside_container(action):
         elif action == 6:
             storytelling.run(channel['id'])
         elif action == 9:
+            video_build.run(channel['id'], preprocess=True)
             video_build.run(channel['id'])
 
 def run_process():
@@ -63,6 +67,7 @@ def run_process():
         9: "Build Videos",
         10: "Upload",
         11: "Clean uploaded Files",
+        12: "Download Database Backup",
         0: "Exit",
     }
     
