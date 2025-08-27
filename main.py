@@ -65,7 +65,7 @@ def run_process():
         7: "Generate Audios (OUTSIDE CONTAINER)", # outside
         8: "Download Images (OUTSIDE CONTAINER)", # outside
         9: "Build Videos",
-        10: "Upload",
+        10: "Upload (OUTSIDE CONTAINER)", # outside
         11: "Clean uploaded Files",
         12: "Download Database Backup",
         0: "Exit",

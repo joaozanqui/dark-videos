@@ -2,29 +2,28 @@ import pyautogui as gui
 from datetime import datetime
 import pyperclip
 import time
-from scripts.upload.browsing import search_file
+from scripts.outside_devices.device_2.utils import search_file
 
 BUTTONS = {
 # add
-    "check_position": (300, 215),
-    "create_button": (1800, 145),
-    "send_video": (1800, 195),
-    "upload_button": (950, 720),
-    "check_position_2": (550, 330),
-    "thumbnail_button": (600, 790),
-    "title_box": (600, 400),
-    "description_box": (670, 630),
-    "next_button": (1350, 995),
-    "off_button": (1000, 995),
-    "not_for_kids": (540, 765),
+    "check_position": (300, 195),
+    "create_button": (1800, 110),
+    "send_video": (1800, 160),
+    "upload_button": (950, 670),
+    "check_position_2": (550, 295),
+    "thumbnail_button": (600, 720),
+    "title_box": (600, 370),
+    "next_button": (1350, 950),
+    "not_for_kids": (540, 720),
+    "off_button": (1000, 950),
 # schedule
-    "public": (585, 580),
-    "schedule_option": (585, 690),
-    "date_button": (690, 610),
-    "time_button": (800, 610),
-    "schedule_button": (1350, 995),
-    "check_is_processing": (895, 700),
-    "close_button": (1150, 745),
+    "public": (585, 555),
+    "schedule_option": (585, 675),
+    "date_button": (690, 570),
+    "time_button": (800, 570),
+    "schedule_button": (1350, 950),
+    "check_is_processing": (895, 645),
+    "close_button": (1150, 685),
 }
 
 def goto_upload_page():
@@ -56,7 +55,11 @@ def fill_text(title, description):
     gui.hotkey('ctrl', 'v')
     time.sleep(0.5)
         
-    gui.click(BUTTONS['description_box'])
+    gui.hotkey('shift')
+    time.sleep(0.5)
+    gui.hotkey('shift')
+    time.sleep(0.5)
+
     gui.hotkey('ctrl', 'a')
     pyperclip.copy(description)
     gui.hotkey('ctrl', 'v')
