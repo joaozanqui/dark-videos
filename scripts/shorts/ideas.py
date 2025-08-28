@@ -23,7 +23,7 @@ def run(video, variables):
     if video['shorts_ideas']:
         return video['shorts_ideas']
 
-    print("\t\t- Generating Shorts Ideas...")
+    print("\t\t - Generating Shorts Ideas...")
     try:
         ideas_str = generate(variables, file_name='shorts_ideas')
         ideas = handle_text.format_json_response(ideas_str)

@@ -93,11 +93,22 @@ def introduction_chat(chat, variables, attempts=0):
 def chapter_chat(chat, chapter, development_topics, variables, attempts=0):
     variables['DEVELOPMENT_CHAPTER_NUMBER'] = chapter + 1
     variables['DEVELOPMENT_TITLE'] = handle_text.sanitize(development_topics['title'])
-    variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topics['subtopic_1'])
-    variables['DEVELOPMENT_SUBTOPIC_2'] = handle_text.sanitize(development_topics['subtopic_2'])
-    variables['DEVELOPMENT_SUBTOPIC_3'] = handle_text.sanitize(development_topics['subtopic_3'])
-    variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topics['subtopic_4'])
-    variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topics['subtopic_5'])
+    variables['DEVELOPMENT_SUBTOPIC_1'] = "Empty"
+    variables['DEVELOPMENT_SUBTOPIC_2'] = "Empty"
+    variables['DEVELOPMENT_SUBTOPIC_3'] = "Empty"
+    variables['DEVELOPMENT_SUBTOPIC_4'] = "Empty"
+    variables['DEVELOPMENT_SUBTOPIC_5'] = "Empty"
+    
+    if development_topics['subtopic_1']:
+        variables['DEVELOPMENT_SUBTOPIC_1'] = handle_text.sanitize(development_topics['subtopic_1'])
+    if development_topics['subtopic_2']:
+        variables['DEVELOPMENT_SUBTOPIC_2'] = handle_text.sanitize(development_topics['subtopic_2'])
+    if development_topics['subtopic_3']:
+        variables['DEVELOPMENT_SUBTOPIC_3'] = handle_text.sanitize(development_topics['subtopic_3'])
+    if development_topics['subtopic_4']:
+        variables['DEVELOPMENT_SUBTOPIC_4'] = handle_text.sanitize(development_topics['subtopic_4'])
+    if development_topics['subtopic_5']:
+        variables['DEVELOPMENT_SUBTOPIC_5'] = handle_text.sanitize(development_topics['subtopic_5'])
 
     prompt = database.get_prompt_template('script', 'script_go_next_development', variables)   
     script = chat_with_model(chat, prompt)
