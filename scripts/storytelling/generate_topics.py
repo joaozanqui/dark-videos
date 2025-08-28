@@ -8,14 +8,25 @@ def generate(variables: dict, template_prompt: dict, agent_prompt: str):
 
     return response
 
-def validate(topics: dict, number_of_dev_topics: int):
+def validate(topics: dict, variables: dict):
     required_topics = ['introduction', 'development', 'conclusion']
     has_all_topics = all(topic in topics for topic in required_topics)
     if not has_all_topics:
         return False
 
-    right_number_of_dev_topics = len(topics['development']) == number_of_dev_topics
-    return right_number_of_dev_topics
+    right_number_of_dev_topics = len(topics['development']) == variables['NUMBER_OF_DEV_TOPICS']
+
+    if not right_number_of_dev_topics:
+        return False
+    
+    for dev_topic in topics['development']:
+        if (len(dev_topic) - 1) < variables['NUMBER_OF_SUBTOPICS_MIN'] or (len(dev_topic) - 1) > variables['NUMBER_OF_SUBTOPICS_MAX']:
+            print(dev_topic)
+            print(len(dev_topic) - 1)
+            return False
+        
+    return True
+
 
 def run(variables: dict, template_prompt: dict, agent_prompt: str):
     topics_str = generate(variables, template_prompt, agent_prompt)
@@ -23,7 +34,7 @@ def run(variables: dict, template_prompt: dict, agent_prompt: str):
     try:
         topics = handle_text.format_json_response(topics_str)
 
-        if not validate(topics, variables['NUMBER_OF_DEV_TOPICS']):
+        if not validate(topics, variables):
             print(f"\t\t\t- Topics generated with errors!")
             print(f"\t\t\t- trying again...")
             return run(variables, template_prompt, agent_prompt)

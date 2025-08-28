@@ -35,7 +35,7 @@ def next_datetime_to_schedule(last_datetime_str, allowed_times, shorts=False, sh
     return next_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def handle_upload(channel, video_title, video_description, title_id, is_shorts=False, shorts_number=-1):
+def handle_upload(channel, video_title, video_description, title_number, is_shorts=False, shorts_number=-1):
     channel_upload = database.get_item('channels_upload', channel['id'], column_to_compare='channel_id')
     device_id = keys.DEVICE
 
@@ -50,8 +50,8 @@ def handle_upload(channel, video_title, video_description, title_id, is_shorts=F
         channel_upload = database.insert(channel_upload_data, 'channels_upload')
 
 
-    old_title = title_id < channel_upload['last_title_number']
-    same_title = title_id == channel_upload['last_title_number']
+    old_title = title_number < channel_upload['last_title_number']
+    same_title = title_number == channel_upload['last_title_number']
     old_shorts = not is_shorts or shorts_number <= channel_upload['last_shorts_number']
     
     if old_title or (same_title and old_shorts):
@@ -61,9 +61,9 @@ def handle_upload(channel, video_title, video_description, title_id, is_shorts=F
     publish_time = next_datetime_to_schedule(channel_upload['last_datetime'], channel_upload['allowed_times'], shorts=is_shorts, shorts_number=shorts_number)
     upload_module_path = f"scripts.outside_devices.device_{device_id}.upload.main"
     upload = importlib.import_module(upload_module_path)
-    upload.run(channel, title_id, video_title, video_description, video_name, publish_time, is_shorts)
+    upload.run(channel, title_number, video_title, video_description, video_name, publish_time, is_shorts)
     
-    channel_upload['last_title_number'] = title_id
+    channel_upload['last_title_number'] = title_number
     channel_upload['last_datetime'] = publish_time
     channel_upload['last_shorts_number'] = shorts_number if is_shorts else -1
 

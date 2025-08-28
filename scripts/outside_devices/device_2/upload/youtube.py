@@ -13,6 +13,7 @@ BUTTONS = {
     "check_position_2": (550, 295),
     "thumbnail_button": (600, 720),
     "title_box": (600, 370),
+    "description_box": (555, 598),
     "next_button": (1350, 950),
     "not_for_kids": (540, 720),
     "off_button": (1000, 950),
@@ -32,34 +33,32 @@ def goto_upload_page():
     gui.click(BUTTONS['send_video'])
     time.sleep(1)
 
-def select_video(channel_id, title_id, video_name):
+def select_video(file_path, file_name):
     time.sleep(1)
     gui.click(BUTTONS['upload_button'])
     time.sleep(1)
     
-    search_file(channel_id, title_id, video_name)
+    search_file(f"{file_path}/videos", file_name)
 
-def select_image(channel_id, title_id):
+def select_image(file_path, file_name):
     gui.click(BUTTONS['thumbnail_button'])
     time.sleep(1)
     file_name = 'thumbnail.png'
-    search_file(channel_id, title_id, file_name)
+    search_file(file_path, file_name)
 
 def fill_text(title, description):
     while len(title) > 100:
         title = ' '.join(title.split(' ')[:-1])
 
     gui.click(BUTTONS['title_box'])
+    time.sleep(0.5)
     gui.hotkey('ctrl', 'a')
     pyperclip.copy(title)
     gui.hotkey('ctrl', 'v')
     time.sleep(0.5)
-        
-    gui.hotkey('shift')
-    time.sleep(0.5)
-    gui.hotkey('shift')
-    time.sleep(0.5)
 
+    gui.click(BUTTONS['description_box'])
+    time.sleep(0.5)
     gui.hotkey('ctrl', 'a')
     pyperclip.copy(description)
     gui.hotkey('ctrl', 'v')
@@ -96,13 +95,13 @@ def wait_page_load(button, limit=0):
     pyperclip.copy('')
     return True
 
-def add_video(channel_id, title_id, title, description, video_name, shorts):
+def add_video(file_path, title, description, file_name, shorts):
     wait_page_load(BUTTONS['check_position'])
     goto_upload_page()
-    select_video(channel_id, title_id, video_name)
+    select_video(file_path, file_name)
     wait_page_load(BUTTONS['check_position_2'])
     if not shorts:
-        select_image(channel_id, title_id)
+        select_image(file_path, file_name)
     fill_text(title, description)
     return go_next()    
 

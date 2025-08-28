@@ -35,7 +35,8 @@ def wait_process(check_button, time_sleep=5, clicks_qty=2):
     empty_text = pyperclip.paste().strip()
     
     while True:
-        time.sleep(time_sleep)
+        gui.click(check_button)
+        time.sleep(0.5)
         if clicks_qty == 1:
             gui.click(check_button)
         if clicks_qty == 2:

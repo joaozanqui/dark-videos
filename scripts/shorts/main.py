@@ -41,19 +41,20 @@ def create(channel, title):
     
     if all_shorts:
         scripts = [shorts['full_script'] for shorts in all_shorts]
-        if all(scripts):
+        uploaded = [shorts['uploaded'] for shorts in all_shorts]
+        if all(scripts) or all(uploaded):
             return
 
-    print(f"\t\t-Shorts Ideas video {video['id']}")
+    print(f"\t\t - Shorts Ideas for {title['title_number']}")
     
     variables = prompt_variables(video, channel, title)
     video['shorts_ideas'] = ideas.run(video, variables)
     
-    print("\t\t- Generating Shorts Scripts...")
+    print("\t\t - Generating Shorts Scripts...")
     for idea in video['shorts_ideas']:
         generate_script.run(video, idea, variables)
 
-    print("\t\t- Shorts ideas Done!")
+    print("\t\t - Shorts ideas Done!")
 
 def run_preprocess(audio_path, temp_audio_path, channel, shorts):
     if database.has_file(temp_audio_path) and shorts['subtitles'] and shorts['expressions']:
