@@ -23,8 +23,10 @@ def run(channel_id) -> Optional[Path]:
                 continue
             
             print(f"\t-Video {title['title_number']}")
-            audio_path = audios.download_audios(video['full_script'], final_path, channel)
-
+            audio_path = audios.download_audios(video['full_script'], final_path, channel, title['title_number'])
+            if not audio_path:
+                return None
+            
             database.update('videos', video['id'], 'has_audio', True)
             
             audios.shorts(video['id'], final_path, channel)

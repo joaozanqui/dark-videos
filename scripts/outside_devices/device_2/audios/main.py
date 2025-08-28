@@ -36,7 +36,7 @@ def create_srt_from_file(full_script, final_path, output_file = 'full_script'):
         
         database.export(output_file, final_srt_string, format='srt', path=final_path)
         
-        return f"{output_file}.srt"
+        return f"{output_file}.srt", len(blocks)
     except Exception as e:
         print(f"Error exporting srt file: {e}")
         return ""
@@ -52,10 +52,12 @@ def shorts(video_id, final_path, channel):
         generating = True
 
         print(f"\t\t-{shorts['number']}...")
-        srt_file = create_srt_from_file(shorts['full_script'], final_path, output_file=f"shorts_{shorts['number']}")
+        srt_file, blocks_qty = create_srt_from_file(shorts['full_script'], final_path, output_file=f"shorts_{shorts['number']}")
         shorts_name = f"shorts_{shorts['number']}"
         downloaded_file_name = f"shorts_{channel['id']}_{video_id}_{shorts['number']}"
-        audio_file = capcut.run(final_path, srt_file, channel, file_name=downloaded_file_name)
+        audio_file = capcut.run(final_path, srt_file, channel, blocks_qty, file_name=downloaded_file_name)
+        if not audio_file:
+            return shorts(video_id, final_path, channel)
         audio_path = copy_audio_to_right_path(shorts_name, final_path, audio_file)
 
         if not audio_path:
@@ -70,11 +72,13 @@ def shorts(video_id, final_path, channel):
     return True
 
 
-def download_audios(full_script, final_path, channel):
-    srt_file = create_srt_from_file(full_script, final_path)
+def download_audios(full_script, final_path, channel, title_number):
+    srt_file, blocks_qty = create_srt_from_file(full_script, final_path, output_file=f"full_script_{channel['id']}_{title_number}")
     print(f"\t\t-Generating Audio...")
-    downloaded_file_name = f"full_script_{channel['id']}"
-    audio_file = capcut.run(final_path, srt_file, channel, file_name=downloaded_file_name)
+    downloaded_file_name = f"full_script_{channel['id']}_{title_number}"
+    audio_file = capcut.run(final_path, srt_file, channel, blocks_qty, file_name=downloaded_file_name)
+    if not audio_file:
+        return download_audios(full_script, final_path, channel, title_number)
     audio_path = copy_audio_to_right_path(f"audio", final_path, audio_file)
         
     if not audio_path:

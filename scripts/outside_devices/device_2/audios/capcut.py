@@ -41,10 +41,11 @@ else:
     }
     BUTTONS = {
         "text_tab": (130, 50),
-        "srt_tab": (65, 305),
+        "srt_tab": (65, 275),
         "srt_import": (155, 105),
         "add_srt": (205, 190),
         "text_to_speech_tab": (1700, 55),
+        "text_to_speech_tab_for_one_textfile": (1775, 55),
         "start_reading": (1850, 555),
         "check_text": (1105, 410),
         "click_to_select": (1740, 825),
@@ -86,13 +87,16 @@ def merge_audio():
     gui.hotkey('alt', 'g')
     time.sleep(2)
 
-def text_to_speech(voice_type, voice_name):
+def text_to_speech(voice_type, voice_name, blocks_qty):
     gui.click(BUTTONS['click_to_select'])
     time.sleep(2)
     gui.hotkey('ctrl', 'a')
     time.sleep(1)
 
-    gui.click(BUTTONS['text_to_speech_tab'])
+    if blocks_qty > 1:
+        gui.click(BUTTONS['text_to_speech_tab'])
+    else:
+        gui.click(BUTTONS['text_to_speech_tab_for_one_textfile'])
     time.sleep(2)
 
     voice_type_button = VOICES_TYPE[voice_type]
@@ -132,25 +136,22 @@ def restart():
     gui.hotkey('delete')
     time.sleep(0.5)
 
-def run(final_path, srt_file, channel, file_name='tmp_audio'):
+def run(final_path, srt_file, channel, blocks_qty, file_name='tmp_audio'):
     restart()
     device_infos = database.get_item('devices', DEVICE)
     srt_path = f"{device_infos['final_path']}/{final_path}"
     select_srt(srt_path, srt_file)
-    text_to_speech(channel['capcut_voice_type'], channel['capcut_voice_name'])
+    wait_process(BUTTONS["check_text"], time_sleep=2)
+    text_to_speech(channel['capcut_voice_type'], channel['capcut_voice_name'], blocks_qty)
     merge_audio()
     
     
     last_file_before_download = device.get_last_downloaded_file()
     export(file_name)
-    last_file = device.get_last_downloaded_file()
-    while last_file_before_download == last_file:
-        print(last_file_before_download)
-        print(last_file)
-        time.sleep(1)
-        last_file = device.get_last_downloaded_file()
-
-    time.sleep(1)
-    last_file_path = str(Path(last_file).with_stem(file_name))
-    return last_file_path
-
+    new_file = device.wait_for_new_file(last_file_before_download)
+    if not new_file:
+        print(f"Fail in downloading file")
+        return None
+    
+    new_file_path = str(Path(new_file).with_stem(file_name))
+    return new_file_path
