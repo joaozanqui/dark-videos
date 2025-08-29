@@ -27,6 +27,8 @@ def prompt_variables(video, channel, title):
     }
 
 def build_infos(video, channel, title, shorts):
+    print("\t\t-Building Shorts Infos...")
+
     variables = prompt_variables(video, channel, title)    
     idea = next((idea for idea in video['shorts_ideas'] if idea['id'] == shorts['number']), None)
     
@@ -82,20 +84,19 @@ def build_video(narration_audio, channel, shorts):
     subtitles_top = channel['shorts_subtitles_position'] == 'top'
     subtitles_h = 10 if subtitles_top else 1.5
     subtitles_w = 100
-    background_video_composite = background_video.run(narration_audio.duration, video_orientation='vertical', target_resolution=(1080, 1920))
+    background_video_composite, clips_to_close = background_video.run(narration_audio.duration, video_orientation='vertical', target_resolution=(1080, 1920))
     
     video_composite = video_build.create_video(background_video_composite, expressions_images_composite, shorts['subtitles'], subtitles_padding=0.98, subtitles_denominators=(subtitles_w, subtitles_h))
-    return video_composite
+    return video_composite, clips_to_close
 
 def build(temp_audio_path, channel, shorts, final_path, shorts_name):
     print(f"\t\t--- Bulding Shorts {shorts['number']} ---\n")
 
     narration_audio = video_build.get_narration_audio(temp_audio_path)
-    video_composite = build_video(narration_audio, channel, shorts)   
-    background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
-    audio = video_build.create_audio(narration_audio, background_music)
+    video_composite, clips_to_close = build_video(narration_audio, channel, shorts)   
+    audio_path = video_build.create_audio(narration_audio, channel, final_path=f"{final_path}/final_shorts_audio_{shorts['number']}.mp3")
     
-    video_build.render_video(audio, video_composite, final_path, shorts_name)
+    video_build.render_video(audio_path, video_composite, final_path, clips_to_close, shorts_name)
     database.update('shorts', shorts['id'], 'generated_device', keys.DEVICE)
 
 def run(video, channel, title, preprocess=False):
