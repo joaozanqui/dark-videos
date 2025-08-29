@@ -69,7 +69,7 @@ def subtitles(audio_path, language, id, table='videos'):
         del model
 
 def music(audio_duration, mood):  
-    print(f"\t\t-Merging background music ({audio_duration}s)...")
+    print(f"\t\t- Merging background music ({audio_duration}s)...")
     musics_path = f"assets/musics/{mood}"
 
     mp3_files = [
