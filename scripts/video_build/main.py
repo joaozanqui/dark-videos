@@ -14,28 +14,34 @@ import gc
 import scripts.database as database
 import config.keys as keys
 
-def render_video(audio, video, final_path, file_name='video'):    
+def render_video(audio_path, video, final_path, source_clips, file_name='video'):
     output_path = f"{final_path}/videos"
     os.makedirs(output_path, exist_ok=True)
     output_file = f"{output_path}/{file_name}.mp4"
 
-    video.audio = audio
-    video.fps = 24
-    gc.collect()
-    
-    print(f"\t\t-Exporting final video: {output_file}")
-    
-    video.write_videofile(
-        output_file, 
-        codec='libx264', 
-        audio_codec='aac',
-        temp_audiofile='audio.m4a',
-        remove_temp=True,
-        threads=2,
-        preset='ultrafast'
-    )
-    
-    print("\t\t-Video built successful!")
+    try:
+        audio = AudioFileClip(audio_path)
+        video.audio = audio
+        video.fps = 24
+        
+        print(f"\t\t-Exporting final video: {output_file}")
+        
+        video.write_videofile(
+            output_file, 
+            codec='libx264', 
+            audio_codec='aac',
+            temp_audiofile='audio.m4a',
+            remove_temp=True,
+            threads=4,
+            preset='ultrafast'
+        )
+        
+        print("\t\t-Video built successful!")
+    finally:
+        print("\t\t-Closing source video clips...")
+        for clip in source_clips:
+            clip.close()
+
 
 def create_subtitles(background_video_composite, subtitles, padding, denominators):
     w_denominator, h_denominator = denominators
@@ -94,8 +100,12 @@ def create_video(
 
     return final_video
 
-def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip, intro_file = ''):
+def create_audio(narration_audio: AudioFileClip, channel: dict, intro_file = '', final_path = ''):
+    if database.has_file(final_path):
+        return final_path
+    
     print("\t\t- Merging Audio...")
+    background_music = generate.music(audio_duration=narration_audio.duration, mood=channel['mood'])
     concatenate_intro = intro_file != ''
 
     background_music = background_music.volumex(0.5)
@@ -108,6 +118,13 @@ def create_audio(narration_audio: AudioFileClip, background_music: AudioFileClip
     else:
         final_audio = main_audio
 
+    final_audio.fps = narration_audio.fps
+    final_audio.nchannels = narration_audio.nchannels
+
+    if final_path:
+        final_audio.write_audiofile(final_path)
+        return final_path
+    
     return final_audio
 
 def fix_subtitles_time(subtitles):
@@ -190,27 +207,27 @@ def run_preprocess(audio_path, temp_audio_path, channel, video):
     return True
 
 def build(final_path, temp_audio_path, channel, video):
-    print(f"\t\t--- Building Videos ---\n")
-
     narration_audio = get_narration_audio(temp_audio_path)
     intro_file = f"assets/intros/{channel['id']}/intro.mp4"
-    background_music = generate.music(audio_duration=narration_audio.duration ,mood=channel['mood'])
-    audio = create_audio(narration_audio, background_music, intro_file=intro_file)
+
+    audio_path = create_audio(narration_audio, channel, intro_file=intro_file, final_path=f"{final_path}/final_audio.mp3")
     
     expressions_path = f"assets/expressions/{channel['id']}/chroma"
     subtitles = fix_subtitles_time(video['expressions'])
     expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration)
     
-    background_video_composite = background_video.run(narration_audio.duration)
+    background_video_composite, clips_to_close = background_video.run(narration_audio.duration)
+
     video = create_video(background_video_composite, expressions_images_composite, video['subtitles'], intro_file=intro_file)
-    render_video(audio, video, final_path)
+    render_video(audio_path, video, final_path, clips_to_close)
 
 def run(channel_id, preprocess=False):
+    collected_objects = gc.collect()
     process_name = 'Preparing' if preprocess else 'Building'
-    print(f"- {process_name} Videos")
+    print(f"\n- {process_name} Videos")
     
     channel = database.get_item('channels', channel_id)
-    print(f"\t- {channel['name']}")
+    print(f"- {channel['name']}\n")
     titles = database.channel_titles(channel_id)
 
     for title in titles:

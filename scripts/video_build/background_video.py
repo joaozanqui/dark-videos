@@ -85,77 +85,108 @@ def select_random_page(all_pages, checked_pages):
 def create_background_video(target_duration: float, temp_paths: list, video_orientation: str, video_query: str, target_resolution: tuple):
     clips = []
     total_duration = 0
-    all_pages = [1, 2, 3, 4, 5]
-    checked_pages = [] 
-    page = select_random_page(all_pages, checked_pages)
-    checked_pages.append(page) 
+    all_pages = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    checked_pages = []
     
     DOWNLOAD_PAUSE_SECONDS = 5
     VIDEO_QUALITY = 'tiny'
+    BATCH_TARGET_DURATION = 600
+    
+    batch_files = []
+    batch_clips = []
+    batch_duration = 0
+    batch_number = 1
 
     while total_duration < target_duration and len(checked_pages) < len(all_pages):
+        page = select_random_page(all_pages, checked_pages)
+        checked_pages.append(page)
         api_key = next_pixabay_api_key()
         hits = fetch_pixabay_videos_page(video_orientation, video_query, page=page, api_key=api_key)
+        
         if not hits:
-            print("\t\t- No more videos found.")
-            break
+            continue
         
         random.shuffle(hits)
 
         for hit in hits:
+            if total_duration >= target_duration:
+                break
+            
             video_url = hit.get("videos", {}).get(VIDEO_QUALITY, {}).get("url")
             if not video_url:
                 continue
             
             time.sleep(DOWNLOAD_PAUSE_SECONDS)
-            
-            filepath = None
+            filepath = download_video_to_temp(video_url)
+            if not filepath:
+                continue
+
             try:
-                filepath = download_video_to_temp(video_url)
-                if not filepath:
-                    continue
-                
                 temp_paths.append(filepath)
-                
                 clip = VideoFileClip(filepath)
                 processed_clip = resize_and_crop_clip(clip, target_resolution=target_resolution)
                 
-                clips.append(processed_clip)
+                batch_clips.append(processed_clip)
+                batch_duration += processed_clip.duration
                 total_duration += processed_clip.duration
-                print(f"\t\t\t- Current video duration: {total_duration:.2f}s / {target_duration}s")
-
-                if total_duration >= target_duration:
-                    break 
                 
-            except Exception as e:
-                print(f"Erro ao processar o vídeo {video_url}: {e}")
-        
-        page = select_random_page(all_pages, checked_pages)
-        checked_pages.append(page) 
-        
-        if total_duration < target_duration and len(checked_pages) < len(all_pages):
-            time.sleep(DOWNLOAD_PAUSE_SECONDS)
+                print(f"\t\t\t- Total duration: {total_duration:.2f}s / {target_duration:.2f}s")
+
+                if batch_duration >= BATCH_TARGET_DURATION:
+                    batch_filepath = f"temp_batch_{batch_number}.mp4"
+                    batch_video = concatenate_videoclips(batch_clips)
+                    batch_video.write_videofile(batch_filepath, codec='libx264', preset='ultrafast', threads=os.cpu_count())
+                    
+                    for c in batch_clips:
+                        c.close()
+
+                    batch_files.append(batch_filepath)
+                    temp_paths.append(batch_filepath)
+                    batch_clips = []
+                    batch_duration = 0
+                    batch_number += 1
             
+            except Exception as e:
+                print(f"Error processing {video_url}: {e}")
+
+    if not batch_files and batch_clips:
+        return batch_clips
+
+    if batch_clips:
+        batch_filepath = f"temp_batch_{batch_number}.mp4"
+        batch_video = concatenate_videoclips(batch_clips)
+        batch_video.write_videofile(batch_filepath, codec='libx264', preset='ultrafast', threads=os.cpu_count())
+        for c in batch_clips:
+            c.close()
+        batch_files.append(batch_filepath)
+        temp_paths.append(batch_filepath)
+
+    for batch_file in batch_files:
+        clips.append(VideoFileClip(batch_file))
+
     return clips
 
 def run(duration, video_orientation='horizontal', video_query='drone', target_resolution=(1920, 1080)):
-    print(f"\t\t-Building a {duration}s background video")
-
+    print(f"\t\t-Building a {duration:.2f}s background video")
     if not PIXABAY_API_KEYS:
-        raise ValueError("PIXABAY_API_KEYS not found in environment variables.")
+        raise ValueError("PIXABAY_API_KEYS not found.")
 
     temp_paths = []
+    final_clip_obj = None
+    selected_clips = []
     try:
-        selected_clips = create_background_video(duration, temp_paths, video_orientation=video_orientation, video_query=video_query, target_resolution=target_resolution)
-                
+        selected_clips = create_background_video(duration, temp_paths, video_orientation, video_query, target_resolution)
         if not selected_clips:
             raise ValueError("No valid video found.")
 
         final_clip = concatenate_videoclips(selected_clips).subclip(0, duration).without_audio()
-        return CompositeVideoClip([final_clip])
+        final_clip_obj = CompositeVideoClip([final_clip])
     finally:
         for path in temp_paths:
             try:
-                os.unlink(path)
+                if os.path.exists(path):
+                    os.unlink(path)
             except OSError as e:
                 print(f"Error removing temp file {path}: {e}")
+    
+    return final_clip_obj, selected_clips
