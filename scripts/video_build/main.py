@@ -19,28 +19,23 @@ def render_video(audio_path, video, final_path, source_clips, file_name='video')
     os.makedirs(output_path, exist_ok=True)
     output_file = f"{output_path}/{file_name}.mp4"
 
-    try:
-        audio = AudioFileClip(audio_path)
-        video.audio = audio
-        video.fps = 24
-        
-        print(f"\t\t-Exporting final video: {output_file}")
-        
-        video.write_videofile(
-            output_file, 
-            codec='libx264', 
-            audio_codec='aac',
-            temp_audiofile='audio.m4a',
-            remove_temp=True,
-            threads=4,
-            preset='ultrafast'
-        )
-        
-        print("\t\t-Video built successful!")
-    finally:
-        print("\t\t-Closing source video clips...")
-        for clip in source_clips:
-            clip.close()
+    audio = AudioFileClip(audio_path)
+    video.audio = audio
+    video.fps = 24
+    
+    print(f"\t\t-Exporting final video: {output_file}")
+    
+    video.write_videofile(
+        output_file, 
+        codec='libx264', 
+        audio_codec='aac',
+        temp_audiofile='audio.m4a',
+        remove_temp=True,
+        threads=4,
+        preset='ultrafast'
+    )
+    
+    print("\t\t-Video built successful!")
 
 
 def create_subtitles(background_video_composite, subtitles, padding, denominators):
@@ -118,11 +113,8 @@ def create_audio(narration_audio: AudioFileClip, channel: dict, intro_file = '',
     else:
         final_audio = main_audio
 
-    final_audio.fps = narration_audio.fps
-    final_audio.nchannels = narration_audio.nchannels
-
     if final_path:
-        final_audio.write_audiofile(final_path)
+        final_audio.write_audiofile(final_path, fps=narration_audio.fps)
         return final_path
     
     return final_audio

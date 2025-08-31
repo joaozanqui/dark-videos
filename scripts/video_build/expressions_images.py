@@ -2,6 +2,7 @@ import os
 from moviepy.editor import ImageClip, concatenate_videoclips
 from datetime import datetime
 from PIL import Image
+from moviepy.video.fx.all import mask_color
 
 Image.ANTIALIAS = Image.LANCZOS
 
@@ -36,9 +37,12 @@ def run(expressions_path, subtitles_with_expressions, duration, position_h=-200,
         image_clips.append(image_clip)
 
     expressions_video = concatenate_videoclips(image_clips)
+    expressions_video = expressions_video.fx(mask_color, color=[0, 255, 0], thr=100, s=5)
     
     expressions_position = (position_h, position_v)
     expressions_video = expressions_video.set_position(expressions_position)
-    expressions_video = expressions_video.set_duration(duration)
+    
+    safe_duration = min(expressions_video.duration, duration)
+    expressions_video = expressions_video.set_duration(safe_duration)
 
     return expressions_video

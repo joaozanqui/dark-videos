@@ -179,7 +179,9 @@ def run(duration, video_orientation='horizontal', video_query='drone', target_re
         if not selected_clips:
             raise ValueError("No valid video found.")
 
-        final_clip = concatenate_videoclips(selected_clips).subclip(0, duration).without_audio()
+        concatenated_clip = concatenate_videoclips(selected_clips)
+        safe_duration = min(concatenated_clip.duration, duration)
+        final_clip = concatenated_clip.subclip(0, safe_duration).without_audio()
         final_clip_obj = CompositeVideoClip([final_clip])
     finally:
         for path in temp_paths:
