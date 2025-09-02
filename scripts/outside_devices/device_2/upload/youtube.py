@@ -102,6 +102,7 @@ def add_video(file_path, title, description, file_name, shorts):
     wait_page_load(BUTTONS['check_position_2'])
     if not shorts:
         select_image(file_path, file_name)
+    wait_page_load(BUTTONS['check_position_2'])
     fill_text(title, description)
     return go_next()    
 
