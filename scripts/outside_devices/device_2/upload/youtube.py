@@ -76,8 +76,13 @@ def go_next():
     gui.click(BUTTONS['next_button'])
     verifies_check = wait_page_load(BUTTONS['check_position_2'], limit=5)
     if not verifies_check:
-        return False
+        return False       
     gui.click(BUTTONS['next_button'])
+    
+    while verifies_check == "Verificações":
+        gui.click(BUTTONS['next_button'])
+        verifies_check = wait_page_load(BUTTONS['check_position_2'], limit=5)
+
     wait_page_load(BUTTONS['check_position_2'])
     return True
 
@@ -92,8 +97,10 @@ def wait_page_load(button, limit=0):
         attempts += 1
         if limit and attempts > limit:
             return False
+    
+    last_copy = pyperclip.paste()
     pyperclip.copy('')
-    return True
+    return last_copy
 
 def add_video(file_path, title, description, file_name, shorts):
     wait_page_load(BUTTONS['check_position'])

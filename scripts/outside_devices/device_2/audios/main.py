@@ -3,7 +3,7 @@ from scripts.audios.utils import copy_audio_to_right_path, divide_text
 import scripts.database as database
 
 def create_srt_from_file(full_script, final_path, output_file = 'full_script'):
-    blocks = divide_text(full_script, max_chars=500, separate_character=['.', '?', '\n', '!', ':'])    
+    blocks = divide_text(full_script, max_chars=450, separate_character=['.', '?', '\n', '!', ':'])    
 
     try:
         srt_content = []
@@ -28,10 +28,12 @@ def create_srt_from_file(full_script, final_path, output_file = 'full_script'):
                 end_time_ms % 1000
             )
 
-            srt_content.append(str(i + 1))
-            srt_content.append(f"{start_time} --> {end_time}")
-            srt_content.append(block.replace("\n", " ").strip())
-            srt_content.append("")
+            block_content = block.replace("\n", " ").strip()
+            if block_content:
+                srt_content.append(str(i + 1))
+                srt_content.append(f"{start_time} --> {end_time}")
+                srt_content.append(block_content)
+                srt_content.append("")
         final_srt_string = "\n".join(srt_content)
         
         database.export(output_file, final_srt_string, format='srt', path=final_path)
