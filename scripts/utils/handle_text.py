@@ -118,6 +118,13 @@ def has_multiple_forbidden_terms(text):
     matches = re.findall(pattern, normalized)
     
     return len(matches) > 1
+
+def is_misunderstood(text):
+    normalized = normalize(text)
+    pattern = r'\*\*|\b(?:sub[-_\s]?)?(scriptcraft|scriptwriter)\b'
+    matches = re.findall(pattern, normalized)
+    
+    return len(matches) > 0
     
 def is_text_wrong(text, language):
     error = has_multiple_forbidden_terms(text) or not is_language_right(text, language)
