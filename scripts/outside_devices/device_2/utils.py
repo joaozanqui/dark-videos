@@ -15,25 +15,26 @@ def search_file(file_path, file_name):
     gui.click(BUTTONS['search_folder_box'])
     pyperclip.copy(file_path)
     gui.hotkey('ctrl', 'v')
-    time.sleep(0.5)
-    gui.hotkey('enter')
     time.sleep(1)
+    gui.hotkey('enter')
+    time.sleep(2)
 
     gui.click(BUTTONS['search_file_box'])
     pyperclip.copy(file_name)
     gui.hotkey('ctrl', 'v')
-    time.sleep(0.5)
-    gui.hotkey('enter')
     time.sleep(1)
+    gui.hotkey('enter')
+    time.sleep(2)
 
     gui.doubleClick(BUTTONS['first_result'])
     time.sleep(2)
 
 
-def wait_process(check_button, time_sleep=5, clicks_qty=2):
+def wait_process(check_button, time_sleep=5, clicks_qty=2, limit=0):
     pyperclip.copy('')
     empty_text = pyperclip.paste().strip()
     
+    tries = 0
     while True:
         gui.click(check_button)
         time.sleep(0.5)
@@ -47,8 +48,11 @@ def wait_process(check_button, time_sleep=5, clicks_qty=2):
         gui.hotkey('ctrl', 'c')
         time.sleep(0.5)
         clipboard_content = pyperclip.paste().strip()
+        tries += 1
         if clipboard_content != empty_text:
-            break
+            return True
+        if limit > 0 and tries > limit:
+            return False
 
 def goto_bottom_of_page(x=1, time_sleep=0.5):
     gui.scroll(-screenHeight*x)

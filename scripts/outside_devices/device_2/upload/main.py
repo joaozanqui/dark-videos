@@ -11,5 +11,5 @@ def run(channel, title_number, video_title, video_description, file_name, publis
     video_added = youtube.add_video(file_path, video_title, video_description, file_name, shorts)
     if not video_added:
         print('Error: trying again...')
-        return run()
+        return run(channel, title_number, video_title, video_description, file_name, publish_time, shorts)
     youtube.handle_schedule(publish_time, shorts)

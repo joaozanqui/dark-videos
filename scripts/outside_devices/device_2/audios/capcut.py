@@ -41,12 +41,13 @@ else:
     }
     BUTTONS = {
         "text_tab": (130, 50),
-        "srt_tab": (65, 275),
+        "srt_tab": (65, 305),
         "srt_import": (155, 105),
         "add_srt": (205, 190),
         "text_to_speech_tab": (1700, 55),
         "text_to_speech_tab_for_one_textfile": (1775, 55),
         "start_reading": (1850, 555),
+        "cancel_text_to_speech": (955, 585),
         "check_text": (1105, 410),
         "click_to_select": (1740, 825),
         "export": (1750, 10),
@@ -112,7 +113,11 @@ def text_to_speech(voice_type, voice_name, blocks_qty):
     gui.click(BUTTONS["start_reading"])
     time.sleep(0.5)
     gui.click(BUTTONS["check_text"])
-    wait_process(BUTTONS["check_text"], time_sleep=2)
+    process = wait_process(BUTTONS["check_text"], time_sleep=2, limit=10)
+    if not process:
+        gui.click(BUTTONS["cancel_text_to_speech"])
+        time.sleep(1)
+        text_to_speech(voice_type, voice_name, blocks_qty)
 
 def select_srt(final_path, srt_file):
     gui.click(BUTTONS['text_tab'])
@@ -141,7 +146,10 @@ def run(final_path, srt_file, channel, blocks_qty, file_name='tmp_audio'):
     device_infos = database.get_item('devices', DEVICE)
     srt_path = f"{device_infos['final_path']}/{final_path}"
     select_srt(srt_path, srt_file)
-    wait_process(BUTTONS["check_text"], time_sleep=2)
+    time.sleep(2)
+    gui.click(BUTTONS['click_to_select'])
+    wait_process(BUTTONS["check_text"], time_sleep=2, limit=10)
+        
     text_to_speech(channel['capcut_voice_type'], channel['capcut_voice_name'], blocks_qty)
     merge_audio()
     
