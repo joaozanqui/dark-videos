@@ -32,12 +32,14 @@ else:
     VOICES_TYPE = {
         "more_voices": (1885, 100),
         "character": (1475, 130),
+        "english": (1550, 130),
         "portuguese": (1710, 130),
         "male": (1785, 130),
     }
     VOICES = {
         "wacky": (1700, 215),
         "lucas": (1700, 300),
+        "peaceful_male": (1540, 380),
     }
     BUTTONS = {
         "text_tab": (130, 50),
@@ -49,7 +51,7 @@ else:
         "start_reading": (1850, 555),
         "cancel_text_to_speech": (955, 585),
         "check_text": (1105, 410),
-        "click_to_select": (1740, 825),
+        "click_to_select": (1740, 775),
         "export": (1750, 10),
         "check_export": (1125, 250),
         # "disable_video": (1010, 340),
