@@ -3,4 +3,4 @@ logs
 *.srt
 resized_*
 final_*
-
+*.png

@@ -103,7 +103,7 @@ def create_audio(narration_audio: AudioFileClip, channel: dict, intro_file = '',
     background_music = generate.music(audio_duration=narration_audio.duration, mood=channel['mood'])
     concatenate_intro = intro_file != ''
 
-    background_music = background_music.volumex(0.5)
+    background_music = background_music.volumex(0.65)
     main_audio = CompositeAudioClip([narration_audio, background_music])
     main_audio = main_audio.set_duration(narration_audio.duration)
 
@@ -138,7 +138,7 @@ def get_narration_audio(temp_audio_path):
     except Exception as e:
         print(f"\t\t- Error loading existing temp audio file: {e}. Reprocessing...")
 
-def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_seconds=2.0):        
+def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_seconds=3.0):        
     print(f"\t\t- Removing audio pauses...")
     try:
         y, sr = librosa.load(audio_path, sr=None, mono=True)
