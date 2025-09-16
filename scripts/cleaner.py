@@ -16,4 +16,8 @@ def run():
 
             video = database.get_item('videos', title['id'], 'title_id')
             if video['uploaded']:
-                database.remove_file(title_path)
+                all_shorts = database.get_data('shorts', video['id'], 'video_id')
+                if all_shorts:
+                    uploaded = [shorts['uploaded'] for shorts in all_shorts]
+                    if all(uploaded):
+                        database.remove_file(title_path)
