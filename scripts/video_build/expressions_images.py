@@ -15,8 +15,11 @@ def run(expressions_path, subtitles_with_expressions, duration, position_h=-200,
     image_clips = []
 
     for entry in subtitles_with_expressions:
-        expression_name = entry["expression"]
-        
+        if entry.get("expression"):
+            expression_name = entry["expression"]
+        else:
+            expression_name = "serious"
+            
         start = entry["start"]
         if isinstance(start, str):
             start = parse_srt_time(start)
