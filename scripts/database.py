@@ -116,6 +116,17 @@ def insert(data, table=''):
 
     return item[0]
 
+def destroy(id, table=''):
+    data = (
+        db.table(table)
+        .delete()
+        .eq("id", id)
+        .execute()
+        .data
+    )
+
+    return data
+
 def get_item(table, value=None, column_to_compare='id', select="*"):
     item = (
         db.table(table)
