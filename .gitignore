@@ -5,5 +5,5 @@ data.json
 output/
 todo.txt
 *.m4a
-/tests
 image.png
+*-test.py
