@@ -43,7 +43,7 @@ def select_video(file_path, file_name):
 def select_image(file_path, file_name):
     gui.click(BUTTONS['thumbnail_button'])
     time.sleep(1)
-    file_name = 'thumbnail.png'
+    file_name = 'image.png'
     search_file(file_path, file_name)
 
 def fill_text(title, description):
