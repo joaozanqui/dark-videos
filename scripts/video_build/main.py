@@ -187,11 +187,15 @@ def run_preprocess(audio_path, temp_audio_path, channel, video):
     print(f"\t\t--- Preparing Videos ---\n")
     
     if not database.has_file(temp_audio_path):
-        remove_pauses(audio_path, temp_audio_path)
+        removed = remove_pauses(audio_path, temp_audio_path)
+        if not removed:
+            return False
     
     if not video['subtitles']:
         language = database.get_item('languages', channel['language_id'])
         video['subtitles'] = generate.subtitles(temp_audio_path, language['name'], video['id'])
+        if not video['subtitles']:
+            return False
 
     if not video['expressions']:
         video['expressions'] = generate.expressions(video['subtitles'], channel['id'], video['id'])
@@ -224,7 +228,7 @@ def run(channel_id, preprocess=False):
 
     for title in titles:
         video = database.get_item('videos', title['id'], column_to_compare='title_id')
-        if video['uploaded']:
+        if not video or video['uploaded']:
             continue
 
         print(f"\t-(Channel: {channel['id']} / Title: {title['title_number']}) {title['title']}")

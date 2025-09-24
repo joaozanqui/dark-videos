@@ -42,6 +42,7 @@ def save_topics_variables(topics: dict, video_duration: int, number_of_dev_topic
     return variables
 
 def validate(script: str, language: str, attempts: int, duration: str):
+    print(f"\t\t\t\t- Text len: {len(script)}")
     if attempts > 2:
         return True
     
@@ -52,8 +53,13 @@ def validate(script: str, language: str, attempts: int, duration: str):
         print(f"\t\t\t\t- Wrong script duration (trying again)...")
         return False
     
-    is_text_correct = not handle_text.is_text_wrong(script, language)
-    return is_text_correct
+    if handle_text.is_text_wrong(script, language):
+        print(f"\t\t\t\t- Wrong script content (trying again)...")
+        gemini.goto_next_model()
+        return False
+
+    print("\t\t\t\t- Done!")
+    return True
 
 def initialize_chat(script_agent_prompt: str, script_template_prompt: dict, variables: dict):
     chat = gemini.new_chat(script_agent_prompt)
