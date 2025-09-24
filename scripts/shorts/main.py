@@ -65,12 +65,16 @@ def run_preprocess(audio_path, temp_audio_path, channel, shorts):
     print(f"\t\t--- Preparing Shorts {shorts['id']} ---\n")
     
     if not database.has_file(temp_audio_path):
-        video_build.remove_pauses(audio_path, temp_audio_path)
-
+        removed = video_build.remove_pauses(audio_path, temp_audio_path)
+        if not removed:
+            return False
+        
     if not shorts['subtitles']:
         language = database.get_item('languages', channel['language_id'])
         shorts['subtitles'] = generate.subtitles(temp_audio_path, language['name'], shorts['id'], table='shorts')
-
+        if not shorts['subtitles']:
+            return False
+        
     if not shorts['expressions']:
         shorts['expressions'] = generate.expressions(shorts['subtitles'], channel['id'], shorts['id'], table='shorts')
     
