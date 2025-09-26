@@ -1,6 +1,7 @@
 import scripts.database as database
 from scripts.shorts.utils import generate
 import scripts.utils.handle_text as handle_text
+import scripts.utils.gemini as gemini
 import json
 
 def last_shorts_number(all_shorts):
@@ -28,7 +29,8 @@ def run(video, idea, variables):
         script = generate(variables, file_name='shorts_script')
         if handle_text.is_text_wrong(script, variables['LANGUAGE']):
             print(f"\t\t\t- Shorts Script generated with errors!\n\t\t\t- trying again...")
-            return run(idea, variables)
+            gemini.goto_next_model()
+            return run(video, idea, variables)
         
         shorts_data = {
             "video_id": video['id'],

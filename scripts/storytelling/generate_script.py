@@ -42,7 +42,6 @@ def save_topics_variables(topics: dict, video_duration: int, number_of_dev_topic
     return variables
 
 def validate(script: str, language: str, attempts: int, duration: str):
-    print(f"\t\t\t\t- Text len: {len(script)}")
     if attempts > 2:
         return True
     
