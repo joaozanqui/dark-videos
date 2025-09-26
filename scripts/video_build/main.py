@@ -146,6 +146,7 @@ def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_sec
         print(f"\t\t- Error loading audio file: {e}")
         return None, None
 
+    print(f"\t\t\t- Splitting intervals...")
     sound_intervals = librosa.effects.split(y, top_db=top_db)
 
     if not sound_intervals.any():
@@ -156,6 +157,7 @@ def remove_pauses(audio_path, temp_audio_path, top_db=40, min_pause_duration_sec
     start, end = sound_intervals[0]
     audio_chunks.append(y[start:end])
 
+    print(f"\t\t\t- Merging audios...")
     for i in range(len(sound_intervals) - 1):
         end_of_current_chunk = sound_intervals[i][1]
         start_of_next_chunk = sound_intervals[i+1][0]
