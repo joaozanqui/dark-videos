@@ -202,6 +202,9 @@ def run_preprocess(audio_path, temp_audio_path, channel, video):
     if not video['expressions']:
         video['expressions'] = generate.expressions(video['subtitles'], channel['id'], video['id'])
 
+    if not video['expressions']:
+        return False
+
     return True
 
 def build(final_path, temp_audio_path, channel, video):
