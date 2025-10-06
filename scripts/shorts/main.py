@@ -96,12 +96,16 @@ def build_video(narration_audio, channel, shorts):
 def build(temp_audio_path, channel, shorts, final_path, shorts_name):
     print(f"\t\t--- Bulding Shorts {shorts['number']} ---\n")
 
+    if not shorts['expressions']:
+        return False
+    
     narration_audio = video_build.get_narration_audio(temp_audio_path)
     video_composite, clips_to_close = build_video(narration_audio, channel, shorts)   
     audio_path = video_build.create_audio(narration_audio, channel, final_path=f"{final_path}/final_shorts_audio_{shorts['number']}.mp3")
     
     video_build.render_video(audio_path, video_composite, final_path, clips_to_close, shorts_name)
     database.update('shorts', shorts['id'], 'generated_device', keys.DEVICE)
+    return True
 
 def run(video, channel, title, preprocess=False):
     final_path = f"storage/{channel['id']}/{title['title_number']}"
@@ -133,8 +137,9 @@ def run(video, channel, title, preprocess=False):
                 if shorts_count == len(sorted_shorts):
                     print(f"\t\tShorts Preprocess done!")
             else:
-                build(temp_audio_path, channel, shorts, final_path, shorts_name)
-                build_infos(video, channel, title, shorts)
+                built = build(temp_audio_path, channel, shorts, final_path, shorts_name)
+                if built:
+                    build_infos(video, channel, title, shorts)
 
         finally:
             if is_preprocessed or not preprocess:

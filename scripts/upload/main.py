@@ -79,7 +79,8 @@ def get_shorts(shorts_path):
     shorts.sort()
     return shorts
 
-def run(channel_id):   
+def run(channel_id):
+    device_id = int(keys.DEVICE)
     print("--- Uploading Videos ---\n")
     channel = database.get_item('channels', channel_id)
 
@@ -87,16 +88,16 @@ def run(channel_id):
     titles = database.channel_titles(channel_id)
 
     for title in titles:
-        # colocar verificacao se o
         video = database.get_item('videos', title['id'], column_to_compare='title_id')
         print(f"\t-({channel_id}/{title['title_number']}) {title['title']}")
 
         video_title = title['title']
         video_description = video['description']
         if not video['uploaded']:
-            handle_upload(channel, video_title, video_description, title['title_number'])
+            if video['generated_device'] == device_id:
+                handle_upload(channel, video_title, video_description, title['title_number'])
             database.update('videos', video['id'], 'uploaded', True)
-        
+
         all_shorts = database.get_data('shorts', video['id'], 'video_id')
         if not all_shorts:
             return
@@ -107,6 +108,7 @@ def run(channel_id):
         all_shorts.sort(key=lambda s: s["number"])
         for shorts in all_shorts:
             shorts_idea = next((idea for idea in video['shorts_ideas'] if idea["id"] == shorts['number']), None)
-            handle_upload(channel, shorts_idea['main_title'][:100], shorts['description'], title['title_number'], is_shorts=True, shorts_number=shorts['number'])
+            if shorts['generated_device'] == device_id:
+                handle_upload(channel, shorts_idea['main_title'][:100], shorts['description'], title['title_number'], is_shorts=True, shorts_number=shorts['number'])
             database.update('shorts', shorts['id'], 'uploaded', True)
         
