@@ -30,7 +30,8 @@ def inside_container(action):
     elif action == 12:            
         backup()
     else:
-        channel = inputs.select_from_data('channels')           
+        if action != 2:
+            channel = inputs.select_from_data('channels')           
 
         if action <= 4:
             analysis = inputs.select_from_data('analysis')
