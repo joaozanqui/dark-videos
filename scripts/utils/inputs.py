@@ -31,3 +31,14 @@ def select_from_data(table):
             print("Invalid ID.")
             
     return selected_data
+
+def how_many(text):
+    while True:
+        try:
+            number = int(input(f"{text}\n -> "))
+            if number > 0 or number == -1:
+                return number
+            else:
+                print("Please enter a positive integer.")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")

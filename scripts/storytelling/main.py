@@ -69,7 +69,8 @@ def run(channel_id: int):
         video_data = handle_video_data(title['id'])
 
         if video_data['topics'] and video_data['full_script'] and video_data['description'] and video_data['thumbnail_data'] and video_data['thumbnail_prompt']:
-            shorts.create(channel, title)
+            if channel['video_shorts_qty'] > 0:
+                shorts.create(channel, title)
             continue
 
         print(f"\t-(Channel {channel_id} / Title {title['title_number']}) {title['title']}")
@@ -85,8 +86,8 @@ def run(channel_id: int):
         variables['LAST_THUMBNAIL_EXPRESSIONS'] = last_expressions
         thumbnail_expression = generate_infos.run(video_data, variables)
         last_expressions.append(thumbnail_expression)
-
-        shorts.create(channel, title)
+        if channel['video_shorts_qty'] > 0:
+            shorts.create(channel, title)
         
         print(f"\t\t - Done!")
 
