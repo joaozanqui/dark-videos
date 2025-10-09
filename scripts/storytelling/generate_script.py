@@ -3,9 +3,9 @@ import scripts.utils.handle_text as handle_text
 import scripts.utils.gemini as gemini
 
 def save_topics_variables(topics: dict, video_duration: int, number_of_dev_topics: int):
-    introduction = topics['introduction'][0]
+    introduction = topics['introduction'][0] if isinstance(topics['introduction'], list) else topics['introduction']
     developments = topics['development']
-    conclusion = topics['conclusion'][0]
+    conclusion = topics['conclusion'][0] if isinstance(topics['conclusion'], list) else topics['conclusion']
     total_topics_qty = 3
     introduction_duration = video_duration / (total_topics_qty*2)
     conclusion_duration = video_duration / (total_topics_qty*2)

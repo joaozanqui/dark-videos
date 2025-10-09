@@ -40,6 +40,7 @@ else:
         "wacky": (1700, 215),
         "lucas": (1700, 300),
         "peaceful_male": (1540, 380),
+        "narrative_male": (1850, 520),
     }
     BUTTONS = {
         "text_tab": (130, 50),

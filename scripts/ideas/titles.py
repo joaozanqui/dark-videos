@@ -38,23 +38,17 @@ def build_title_prompt(channel: dict, analysis: dict) -> str:
     
     return prompt_template
 
-def run(channel_id):
-    prompt = database.get_prompt_file(channel_id, 'titles')
-    title_ideas = gemini.run(prompt_json=prompt)
-    titles_json = handle_text.format_json_response(title_ideas)
-    if not titles_json or not isinstance(titles_json, list):
-        return run(channel_id)
-
+def confirm_saves(titles_json, channel_id):
     print("\nGenerated Viral Video Title Ideas (for your new agent/scripts):")
     for i, title in enumerate(titles_json):
         if not isinstance(title, dict):
-            return run(channel_id)
+            return False
         print(f"({i}) / {title['title']} - {title['rationale']}\n")
 
     confirm = inputs.yes_or_no("Confirm the titles?")
 
     if not confirm:
-        return run(channel_id)
+        return False
     
     title_number = database.next_title_number(channel_id)
     for title in titles_json:
@@ -68,5 +62,49 @@ def run(channel_id):
         title_number += 1
     
     print(f"Title Ideas saved!")
+    return True
+
+def build_copy_prompt(original_titles, channel):
+    language = database.get_item('languages', channel['language_id'])['name']
+    
+    prompt = f"Translate all the {len(original_titles)} following video titles to {language}, maintaining their meaning and impact. Here are the titles:\n\n"
+    for i, title in enumerate(original_titles):
+        prompt += f"({i+1}) {title}\n"
+    prompt += "\nProvide the translated titles as a JSON array format as follows: [{title: \"translated title 1\", rationale: \"Title 1 main rationale explanation\"}, {title: \"translated title 2\", rationale: \"Title 2 main rationale explanation\"}]"
+
+    return prompt
+
+def copy_titles(base_channel_data, titles_qty, channel):
+    videos = base_channel_data[2]
+    if titles_qty != -1:
+        videos = videos[:titles_qty]
+
+    original_titles = [video['title'] for video in videos]
+    prompt = build_copy_prompt(original_titles, channel)
+
+    translated_titles = gemini.run(prompt_text=prompt)
+    titles_json = handle_text.format_json_response(translated_titles)
+    
+    if not titles_json or not isinstance(titles_json, list) or len(titles_json) != len(original_titles):
+        print("Error in translation or mismatch in number of titles. Retrying...")
+        return copy_titles(base_channel_data, titles_qty, channel)
+    
+    reversed_titles = list(reversed(titles_json))
+
+    if not confirm_saves(titles_json, channel['id']):
+        return copy_titles(base_channel_data, titles_qty, channel)
+    
+    return reversed_titles
+
+
+def run(channel_id):
+    prompt = database.get_prompt_file(channel_id, 'titles')
+    title_ideas = gemini.run(prompt_json=prompt)
+    titles_json = handle_text.format_json_response(title_ideas)
+    if not titles_json or not isinstance(titles_json, list):
+        return run(channel_id)
+
+    if not confirm_saves(titles_json, channel_id):
+        return run(channel_id)
     
     return titles_json

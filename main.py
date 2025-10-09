@@ -30,7 +30,8 @@ def inside_container(action):
     elif action == 12:            
         backup()
     else:
-        channel = inputs.select_from_data('channels')           
+        if action != 2:
+            channel = inputs.select_from_data('channels')           
 
         if action <= 4:
             analysis = inputs.select_from_data('analysis')
@@ -47,7 +48,16 @@ def inside_container(action):
                     prompts.run(channel['id'], step='agents')
                     prompts.run(channel['id'], step='script')     
         elif action == 5:
-            titles.run(channel['id'])
+            generate_new_by_scratch = inputs.yes_or_no("Generate new titles by scratch?")
+            if generate_new_by_scratch:
+                titles.run(channel['id'])
+            else:
+                print("Select the channel used to generate/copy titles:")
+                channel_to_copy = inputs.select_from_data('analysis')
+                title_qty = inputs.how_many("How many videos to copy the title? (-1 to copy all)")
+                channel_data = channel_analysis.get_channel_data(channel_to_copy['channel_url'])
+                titles.copy_titles(channel_data, title_qty, channel)
+            
         elif action == 6:
             storytelling.run(channel['id'])
         elif action == 9:
