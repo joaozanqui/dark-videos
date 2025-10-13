@@ -215,9 +215,9 @@ def build(final_path, temp_audio_path, channel, video):
     
     expressions_path = f"assets/expressions/{channel['id']}/chroma"
     subtitles = fix_subtitles_time(video['expressions'])
-    expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration)
+    expressions_images_composite = expressions_images.run(expressions_path, channel['more_than_1_expression'], subtitles, narration_audio.duration)
     
-    background_video_composite, clips_to_close = background_video.run(narration_audio.duration)
+    background_video_composite, clips_to_close = background_video.run(narration_audio.duration, video_query=channel['background_query'])
 
     video = create_video(background_video_composite, expressions_images_composite, video['subtitles'], intro_file=intro_file)
     render_video(audio_path, video, final_path, clips_to_close)
