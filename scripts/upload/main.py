@@ -100,7 +100,7 @@ def run(channel_id):
 
         all_shorts = database.get_data('shorts', video['id'], 'video_id')
         if not all_shorts:
-            return
+            continue
         uploaded_shorts = [s['uploaded'] for s in all_shorts]
         if all(uploaded_shorts):
             continue

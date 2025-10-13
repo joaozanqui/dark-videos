@@ -83,7 +83,7 @@ def run_preprocess(audio_path, temp_audio_path, channel, shorts):
 def build_video(narration_audio, channel, shorts):
     subtitles = video_build.fix_subtitles_time(shorts['expressions'])
     expressions_path = f"assets/expressions/{channel['id']}/chroma"
-    expressions_images_composite = expressions_images.run(expressions_path, subtitles, narration_audio.duration, position_h='center', position_v='center', expressions_size=1.9)            
+    expressions_images_composite = expressions_images.run(expressions_path, channel['more_than_1_expression'], subtitles, narration_audio.duration, position_h='center', position_v='center', expressions_size=1.9)            
     
     subtitles_top = channel['shorts_subtitles_position'] == 'top'
     subtitles_h = 10 if subtitles_top else 1.5

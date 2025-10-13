@@ -4,28 +4,53 @@ import pyperclip
 import time
 from scripts.outside_devices.device_1.utils import search_file
 
-BUTTONS = {
-# add
-    "check_position": (300, 215),
-    "create_button": (1800, 145),
-    "send_video": (1800, 195),
-    "upload_button": (950, 720),
-    "check_position_2": (550, 330),
-    "thumbnail_button": (600, 790),
-    "title_box": (600, 400),
-    "description_box": (670, 630),
-    "next_button": (1350, 995),
-    "off_button": (1000, 995),
-    "not_for_kids": (540, 765),
-# schedule
-    "public": (585, 580),
-    "schedule_option": (585, 690),
-    "date_button": (690, 610),
-    "time_button": (800, 610),
-    "schedule_button": (1350, 995),
-    "check_is_processing": (895, 700),
-    "close_button": (1150, 745),
-}
+screen_x, screen_y = gui.size()
+if screen_x > 1920:
+    BUTTONS = {
+    # add
+        "check_position": (300, 195),
+        "create_button": (1800, 115),
+        "send_video": (1800, 165),
+        "upload_button": (950, 700),
+        "check_position_2": (550, 300),
+        "thumbnail_button": (600, 760),
+        "title_box": (600, 370),
+        "description_box": (670, 595),
+        "next_button": (1350, 995),
+        "off_button": (1000, 995),
+        "not_for_kids": (540, 765),
+    # schedule
+        "public": (585, 555),
+        "schedule_option": (585, 690),
+        "date_button": (690, 575),
+        "time_button": (800, 575),
+        "schedule_button": (1350, 995),
+        "check_is_processing": (895, 675),
+        "close_button": (1150, 710),
+    }
+else:
+    BUTTONS = {
+    # add
+        "check_position": (300, 215),
+        "create_button": (1800, 145),
+        "send_video": (1800, 195),
+        "upload_button": (950, 720),
+        "check_position_2": (550, 330),
+        "thumbnail_button": (600, 790),
+        "title_box": (600, 400),
+        "description_box": (670, 630),
+        "next_button": (1350, 995),
+        "off_button": (1000, 995),
+        "not_for_kids": (540, 765),
+    # schedule
+        "public": (585, 580),
+        "schedule_option": (585, 690),
+        "date_button": (690, 610),
+        "time_button": (800, 610),
+        "schedule_button": (1350, 995),
+        "check_is_processing": (895, 700),
+        "close_button": (1150, 745),
+    }
 
 def goto_upload_page():
     gui.click(BUTTONS['create_button'])
