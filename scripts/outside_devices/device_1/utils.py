@@ -4,14 +4,26 @@ import config.keys as keys
 import time
 import pyperclip
 
-BUTTONS = {
-    "documents_folder": (600, 580),
-    "desktop_folder": (600, 530),
-    "search_button": (1260, 405),
-    "search_box": (1150, 455),
-    "first_result": (750, 515),
-    "browser_search_box": (700, 95),
-}
+screen_x, screen_y = gui.size()
+
+if screen_x > 1920:
+    BUTTONS = {
+        "documents_folder": (600, 535),
+        "desktop_folder": (600, 500),
+        "search_button": (1260, 375),
+        "search_box": (1150, 425),
+        "first_result": (750, 485),
+        "browser_search_box": (700, 65),
+    }
+else:
+    BUTTONS = {
+        "documents_folder": (600, 580),
+        "desktop_folder": (600, 530),
+        "search_button": (1260, 405),
+        "search_box": (1150, 455),
+        "first_result": (750, 515),
+        "browser_search_box": (700, 95),
+    }
 
 screenWidth, screenHeight = gui.size()
 
